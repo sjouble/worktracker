@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}관리자 대시보드 - WorkTracker{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2>관리자 대시보드</h2>
+        <p>전체 사용자의 업무 현황을 관리할 수 있습니다.</p>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">전체 업무 목록</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>사용자</th>
+                                <th>업무 유형</th>
+                                <th>설명</th>
+                                <th>상태</th>
+                                <th>시작 시간</th>
+                                <th>종료 시간</th>
+                                <th>생성일</th>
+                                <th>관리</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for task in tasks %}
+                            <tr>
+                                <td>{{ task.users.username if task.users else 'Unknown' }}</td>
+                                <td>{{ task.task_type }}</td>
+                                <td>{{ task.description }}</td>
+                                <td>
+                                    <span class="badge {% if task.status == '완료' %}bg-success{% else %}bg-warning{% endif %}">
+                                        {{ task.status }}
+                                    </span>
+                                </td>
+                                <td>{{ task.start_time }}</td>
+                                <td>{{ task.end_time }}</td>
+                                <td>{{ task.created_at }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary">수정</button>
+                                    <button class="btn btn-sm btn-outline-danger">삭제</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
