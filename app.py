@@ -4,6 +4,7 @@ import os
 from dotenv import load_dotenv
 import pandas as pd
 from datetime import datetime
+import uuid
 
 load_dotenv()
 
@@ -45,7 +46,7 @@ def login():
                 }
                 return redirect(url_for('dashboard'))
             
-            # 일반 사용자 로그인
+            # 일반 사용자 로그인 (사용자명만 확인)
             user_data = supabase.table('users').select('*').eq('username', username).execute()
             
             if user_data.data:
@@ -59,6 +60,7 @@ def login():
             else:
                 return render_template('login.html', error="사용자명 또는 비밀번호가 올바르지 않습니다.")
         except Exception as e:
+            print(f"로그인 에러: {e}")  # 디버깅용
             return render_template('login.html', error="로그인에 실패했습니다. 다시 시도해주세요.")
     
     return render_template('login.html')
@@ -90,17 +92,10 @@ def register():
             if existing_user.data:
                 return render_template('register.html', error="이미 존재하는 사용자명입니다.")
             
-            # 1. Supabase 인증 유저 생성
-            auth_response = supabase.auth.sign_up({
-                "email": f"{username}@example.com",
-                "password": password
-            })
-            user_obj = getattr(auth_response, 'user', None)
-            user_id = getattr(user_obj, 'id', None)
-            if not user_id:
-                return render_template('register.html', error="인증 계정 생성에 실패했습니다.")
+            # UUID 생성 (간단한 방법)
+            user_id = str(uuid.uuid4())
             
-            # 2. users 테이블에 사용자 정보 저장
+            # users 테이블에 사용자 정보 저장 (Supabase 인증 없이)
             supabase.table('users').insert({
                 'id': user_id,
                 'username': username,
@@ -110,6 +105,7 @@ def register():
             
             return render_template('login.html', success="회원가입이 완료되었습니다. 로그인해주세요.")
         except Exception as e:
+            print(f"회원가입 에러: {e}")  # 디버깅용
             return render_template('register.html', error="회원가입에 실패했습니다. 다시 시도해주세요.")
     
     # departments 조회 시 에러 처리 추가
@@ -134,7 +130,11 @@ def dashboard():
     username = session['user']['username']
     
     try:
-        # 사용자 정보와 소속 정보를 함께 조회
+        # 관리자 계정 특별 처리
+        if username == 'admin':
+            return render_template('admin_dashboard.html', user={'username': 'admin', 'role': 'admin'})
+        
+        # 일반 사용자 정보와 소속 정보를 함께 조회
         user_info = supabase.table('users').select('*, departments(name)').eq('id', user_id).execute()
         
         if user_info.data:
@@ -149,13 +149,32 @@ def dashboard():
             }
             
             if user['role'] == 'admin':
-                return redirect(url_for('admin_dashboard'))
+                return render_template('admin_dashboard.html', user=user_data)
             else:
                 return render_template('dashboard.html', user=user_data)
         else:
             return redirect(url_for('login'))
     except Exception as e:
         return redirect(url_for('login'))
+
+@app.route('/admin_dashboard')
+def admin_dashboard():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    
+    user_id = session['user']['id']
+    username = session['user']['username']
+    
+    # 관리자 권한 확인
+    if username != 'admin':
+        try:
+            user_info = supabase.table('users').select('*').eq('id', user_id).execute()
+            if not user_info.data or user_info.data[0]['role'] != 'admin':
+                return redirect(url_for('dashboard'))
+        except:
+            return redirect(url_for('dashboard'))
+    
+    return render_template('admin_dashboard.html', user={'username': username, 'role': 'admin'})
 
 @app.route('/test')
 def test():
