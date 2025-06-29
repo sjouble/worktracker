@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 import pandas as pd
 from datetime import datetime
 import uuid
+from typing import Optional
 
 load_dotenv()
 
@@ -12,10 +13,21 @@ app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'dev-secret-key')
 
 # Supabase 클라이언트 설정
-supabase: Client = create_client(
-    os.getenv('SUPABASE_URL') or '',
-    os.getenv('SUPABASE_KEY') or ''
-)
+supabase: Optional[Client] = None
+try:
+    supabase_url = os.getenv('SUPABASE_URL')
+    supabase_key = os.getenv('SUPABASE_KEY')
+    
+    if not supabase_url or not supabase_key:
+        print("⚠️ Supabase 환경 변수가 설정되지 않았습니다.")
+        supabase_url = 'https://cnooukcuxxqgfiuvrmuk.supabase.co'
+        supabase_key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNub291a2N1eHhxZ2ZpdXZybXVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTExMzI5MzQsImV4cCI6MjA2NjcwODkzNH0.GPLp7y2BTXKI6kY7sd_9KEeZD-l1KqR4dMavZjD2_Qc'
+    
+    supabase = create_client(supabase_url, supabase_key)
+    print("✅ Supabase 연결 성공")
+except Exception as e:
+    print(f"❌ Supabase 연결 실패: {e}")
+    supabase = None
 
 @app.route('/health')
 def health_check():
@@ -42,10 +54,11 @@ def login():
             if username == 'admin' and password == '0000':
                 session['user'] = {
                     'id': 'admin-user-id',
-                    'username': 'admin'
+                    'username': 'admin',
+                    'role': 'admin'
                 }
                 print("관리자 로그인 성공")  # 디버깅용
-                return redirect(url_for('dashboard'))
+                return redirect(url_for('admin_dashboard'))
             
             # 일반 사용자 로그인 (사용자명만 확인)
             user_data = supabase.table('users').select('*').eq('username', username).execute()
@@ -74,58 +87,34 @@ def register():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        confirm_password = request.form['confirmPassword']
-        department_id = request.form['department']
+        email = request.form['email']
         
-        # 비밀번호 재확인 검증
-        if password != confirm_password:
-            return render_template('register.html', error="비밀번호가 일치하지 않습니다.")
-        
-        # 비밀번호 길이 검증
-        if len(password) < 6:
-            return render_template('register.html', error="비밀번호는 최소 6자 이상이어야 합니다.")
-        
-        # 소속 선택 검증
-        if not department_id:
-            return render_template('register.html', error="소속을 선택해주세요.")
+        if not supabase:
+            return jsonify({'error': 'Supabase 연결이 없습니다.'}), 500
         
         try:
-            # 사용자명 중복 확인
-            existing_user = supabase.table('users').select('*').eq('username', username).execute()
-            
-            if existing_user.data:
-                return render_template('register.html', error="이미 존재하는 사용자명입니다.")
-            
-            # UUID 생성 (간단한 방법)
+            # 사용자 ID 생성
             user_id = str(uuid.uuid4())
             
-            # users 테이블에 사용자 정보 저장 (Supabase 인증 없이)
-            supabase.table('users').insert({
+            # 사용자 정보 저장
+            result = supabase.table('users').insert({
                 'id': user_id,
                 'username': username,
-                'role': 'user',
-                'department_id': int(department_id)
+                'email': email,
+                'password': password,  # 실제로는 해시화해야 함
+                'created_at': datetime.now().isoformat()
             }).execute()
             
-            print(f"회원가입 성공: {username}")  # 디버깅용
-            session['success_message'] = "회원가입이 완료되었습니다. 로그인해주세요."
-            return redirect(url_for('login'))
+            if result.data:
+                return jsonify({'success': True, 'message': '회원가입 성공!', 'user_id': user_id})
+            else:
+                return jsonify({'error': '회원가입 실패'}), 400
+                
         except Exception as e:
-            print(f"회원가입 에러: {e}")  # 디버깅용
-            return render_template('register.html', error="회원가입에 실패했습니다. 다시 시도해주세요.")
+            print(f"회원가입 에러: {e}")
+            return jsonify({'error': f'회원가입 중 오류가 발생했습니다: {str(e)}'}), 500
     
-    # departments 조회 시 에러 처리 추가
-    try:
-        departments = supabase.table('departments').select('*').execute().data
-    except Exception as e:
-        # RLS 정책 문제로 departments 조회 실패 시 기본 데이터 사용
-        departments = [
-            {'id': 1, 'name': 'B동입고'},
-            {'id': 2, 'name': 'A지상보충'},
-            {'id': 3, 'name': 'A지하보충'}
-        ]
-    
-    return render_template('register.html', departments=departments)
+    return render_template('register.html')
 
 @app.route('/dashboard')
 def dashboard():
