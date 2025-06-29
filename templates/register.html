@@ -17,14 +17,14 @@
                 <div class="alert alert-success">{{ success }}</div>
                 {% endif %}
                 
-                <form method="POST" id="registerForm">
+                <form method="POST" id="registerForm" autocomplete="on">
                     <div class="mb-3">
                         <label for="username" class="form-label">사용자명</label>
-                        <input type="text" class="form-control" id="username" name="username" required>
+                        <input type="text" class="form-control" id="username" name="username" autocomplete="username" required>
                     </div>
                     <div class="mb-3">
                         <label for="department" class="form-label">소속</label>
-                        <select class="form-select" id="department" name="department" required>
+                        <select class="form-select" id="department" name="department" autocomplete="organization" required>
                             <option value="">소속을 선택하세요</option>
                             {% for dept in departments %}
                                 <option value="{{ dept.id }}">{{ dept.name }}</option>
@@ -33,11 +33,11 @@
                     </div>
                     <div class="mb-3">
                         <label for="password" class="form-label">비밀번호</label>
-                        <input type="password" class="form-control" id="password" name="password" required>
+                        <input type="password" class="form-control" id="password" name="password" autocomplete="new-password" required>
                     </div>
                     <div class="mb-3">
                         <label for="confirmPassword" class="form-label">비밀번호 재확인</label>
-                        <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required>
+                        <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" autocomplete="new-password" required>
                         <div class="invalid-feedback" id="passwordError">
                             비밀번호가 일치하지 않습니다.
                         </div>
