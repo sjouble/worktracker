@@ -112,7 +112,23 @@ def register():
         except Exception as e:
             return render_template('register.html', error="회원가입에 실패했습니다. 다시 시도해주세요.")
     
-    departments = supabase.table('departments').select('*').execute().data
+    # departments 조회 시 에러 처리 추가
+    try:
+        departments = supabase.table('departments').select('*').execute().data
+    except Exception as e:
+        # RLS 정책 문제로 departments 조회 실패 시 기본 데이터 사용
+        departments = [
+            {'id': 1, 'name': '인출팀'},
+            {'id': 2, 'name': '보충팀'},
+            {'id': 3, 'name': '입고지원팀'},
+            {'id': 4, 'name': '미출대응팀'},
+            {'id': 5, 'name': '단내리기팀'},
+            {'id': 6, 'name': '이고팀'},
+            {'id': 7, 'name': '과출팀'},
+            {'id': 8, 'name': '파손팀'},
+            {'id': 9, 'name': '기타팀'}
+        ]
+    
     return render_template('register.html', departments=departments)
 
 @app.route('/dashboard')
