@@ -44,6 +44,7 @@ def login():
                     'id': 'admin-user-id',
                     'username': 'admin'
                 }
+                print("관리자 로그인 성공")  # 디버깅용
                 return redirect(url_for('dashboard'))
             
             # 일반 사용자 로그인 (사용자명만 확인)
@@ -56,6 +57,7 @@ def login():
                     'id': user_data.data[0]['id'],
                     'username': user_data.data[0]['username']
                 }
+                print(f"사용자 로그인 성공: {username}")  # 디버깅용
                 return redirect(url_for('dashboard'))
             else:
                 return render_template('login.html', error="사용자명 또는 비밀번호가 올바르지 않습니다.")
@@ -63,7 +65,9 @@ def login():
             print(f"로그인 에러: {e}")  # 디버깅용
             return render_template('login.html', error="로그인에 실패했습니다. 다시 시도해주세요.")
     
-    return render_template('login.html')
+    # 세션에서 성공 메시지 가져오기
+    success_message = session.pop('success_message', None)
+    return render_template('login.html', success=success_message)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -103,7 +107,9 @@ def register():
                 'department_id': int(department_id)
             }).execute()
             
-            return render_template('login.html', success="회원가입이 완료되었습니다. 로그인해주세요.")
+            print(f"회원가입 성공: {username}")  # 디버깅용
+            session['success_message'] = "회원가입이 완료되었습니다. 로그인해주세요."
+            return redirect(url_for('login'))
         except Exception as e:
             print(f"회원가입 에러: {e}")  # 디버깅용
             return render_template('register.html', error="회원가입에 실패했습니다. 다시 시도해주세요.")
@@ -174,7 +180,24 @@ def admin_dashboard():
         except:
             return redirect(url_for('dashboard'))
     
-    return render_template('admin_dashboard.html', user={'username': username, 'role': 'admin'})
+    try:
+        # 관리자용 데이터 로드
+        departments = supabase.table('departments').select('*').execute().data
+        users = supabase.table('users').select('*, departments(name)').execute().data
+        tasks = supabase.table('tasks').select('*, users(username)').execute().data
+        
+        return render_template('admin_dashboard.html', 
+                             user={'username': username, 'role': 'admin'},
+                             departments=departments,
+                             users=users,
+                             tasks=tasks)
+    except Exception as e:
+        print(f"관리자 대시보드 에러: {e}")
+        return render_template('admin_dashboard.html', 
+                             user={'username': username, 'role': 'admin'},
+                             departments=[],
+                             users=[],
+                             tasks=[])
 
 @app.route('/test')
 def test():
