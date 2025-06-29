@@ -7,7 +7,7 @@ CREATE TABLE departments (
 
 -- 기본 소속 데이터 삽입
 INSERT INTO departments (name) VALUES 
-    ('B동보충'),
+    ('B동입고'),
     ('A지상보충'),
     ('A지하보충');
 
