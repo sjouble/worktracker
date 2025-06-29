@@ -6,20 +6,68 @@
 <div class="row">
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2>{{ username }}님의 업무 대시보드</h2>
             <div>
-                <button class="btn btn-success me-2" onclick="exportExcel()">엑셀 다운로드</button>
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#taskModal">새 업무 등록</button>
+                <h2>안녕하세요, {{ user.username }}님!</h2>
+                <p class="text-muted">소속: {{ user.department_name if user.department_name else '미지정' }}</p>
+            </div>
+            <div>
+                <a href="{{ url_for('logout') }}" class="btn btn-outline-secondary">로그아웃</a>
             </div>
         </div>
         
-        {% if error %}
-        <div class="alert alert-danger">{{ error }}</div>
-        {% endif %}
+        <!-- 업무 등록 섹션 -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">새 업무 등록</h5>
+            </div>
+            <div class="card-body">
+                <form id="taskForm">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="taskType" class="form-label">업무 유형</label>
+                                <select class="form-select" id="taskType" required>
+                                    <option value="">업무 유형 선택</option>
+                                    <option value="인출">인출</option>
+                                    <option value="보충">보충</option>
+                                    <option value="입고지원">입고지원</option>
+                                    <option value="미출대응">미출대응</option>
+                                    <option value="단내리기">단내리기</option>
+                                    <option value="이고">이고</option>
+                                    <option value="과출">과출</option>
+                                    <option value="파손">파손</option>
+                                    <option value="기타">기타</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="description" class="form-label">업무 설명</label>
+                                <input type="text" class="form-control" id="description" placeholder="업무에 대한 간단한 설명을 입력하세요">
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">업무 시작</button>
+                </form>
+            </div>
+        </div>
         
+        <!-- 현재 진행 중인 업무 -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">현재 진행 중인 업무</h5>
+            </div>
+            <div class="card-body">
+                <div id="currentTasks">
+                    <!-- 현재 업무가 여기에 동적으로 로드됩니다 -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- 완료된 업무 -->
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">업무 목록</h5>
+                <h5 class="mb-0">완료된 업무</h5>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
@@ -28,32 +76,13 @@
                             <tr>
                                 <th>업무 유형</th>
                                 <th>설명</th>
-                                <th>상태</th>
                                 <th>시작 시간</th>
                                 <th>종료 시간</th>
-                                <th>생성일</th>
-                                <th>관리</th>
+                                <th>소요 시간</th>
                             </tr>
                         </thead>
-                        <tbody id="tasksTableBody">
-                            {% for task in tasks %}
-                            <tr data-task-id="{{ task.id }}">
-                                <td>{{ task.task_type }}</td>
-                                <td>{{ task.description }}</td>
-                                <td>
-                                    <span class="badge {% if task.status == '완료' %}bg-success{% else %}bg-warning{% endif %}">
-                                        {{ task.status }}
-                                    </span>
-                                </td>
-                                <td>{{ task.start_time }}</td>
-                                <td>{{ task.end_time }}</td>
-                                <td>{{ task.created_at }}</td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-primary" onclick="editTask({{ task.id }})">수정</button>
-                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteTask({{ task.id }})">삭제</button>
-                                </td>
-                            </tr>
-                            {% endfor %}
+                        <tbody id="completedTasks">
+                            <!-- 완료된 업무가 여기에 동적으로 로드됩니다 -->
                         </tbody>
                     </table>
                 </div>
@@ -62,63 +91,145 @@
     </div>
 </div>
 
-<!-- 업무 등록/수정 모달 -->
-<div class="modal fade" id="taskModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="taskModalTitle">새 업무 등록</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="taskForm">
-                    <div class="mb-3">
-                        <label for="taskType" class="form-label">업무 유형</label>
-                        <select class="form-select" id="taskType" required>
-                            <option value="">선택하세요</option>
-                            <option value="인출">인출</option>
-                            <option value="보충">보충</option>
-                            <option value="입고지원">입고지원</option>
-                            <option value="미출대응">미출대응</option>
-                            <option value="단내리기">단내리기</option>
-                            <option value="이고">이고</option>
-                            <option value="과출">과출</option>
-                            <option value="파손">파손</option>
-                            <option value="기타">기타</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="description" class="form-label">설명</label>
-                        <textarea class="form-control" id="description" rows="3"></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label for="status" class="form-label">상태</label>
-                        <select class="form-select" id="status" required>
-                            <option value="진행중">진행중</option>
-                            <option value="완료">완료</option>
-                        </select>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="startTime" class="form-label">시작 시간</label>
-                                <input type="datetime-local" class="form-control" id="startTime" required>
+<script>
+// 페이지 로드 시 업무 목록 불러오기
+document.addEventListener('DOMContentLoaded', function() {
+    loadTasks();
+});
+
+// 업무 등록
+document.getElementById('taskForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const taskType = document.getElementById('taskType').value;
+    const description = document.getElementById('description').value;
+    
+    if (!taskType) {
+        alert('업무 유형을 선택해주세요.');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/tasks', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                task_type: taskType,
+                description: description,
+                start_time: new Date().toISOString()
+            })
+        });
+        
+        if (response.ok) {
+            document.getElementById('taskForm').reset();
+            loadTasks();
+        } else {
+            const error = await response.json();
+            alert(error.error || '업무 등록에 실패했습니다.');
+        }
+    } catch (error) {
+        alert('업무 등록 중 오류가 발생했습니다.');
+    }
+});
+
+// 업무 목록 불러오기
+async function loadTasks() {
+    try {
+        const response = await fetch('/api/tasks');
+        const tasks = await response.json();
+        
+        // 현재 진행 중인 업무
+        const currentTasks = tasks.filter(task => task.status === '진행중');
+        const currentTasksDiv = document.getElementById('currentTasks');
+        
+        if (currentTasks.length === 0) {
+            currentTasksDiv.innerHTML = '<p class="text-muted">현재 진행 중인 업무가 없습니다.</p>';
+        } else {
+            let currentTasksHTML = '';
+            currentTasks.forEach(task => {
+                const startTime = new Date(task.start_time).toLocaleString();
+                currentTasksHTML += `
+                    <div class="card mb-2">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="card-title">${task.task_type}</h6>
+                                    <p class="card-text">${task.description || '설명 없음'}</p>
+                                    <small class="text-muted">시작 시간: ${startTime}</small>
+                                </div>
+                                <button class="btn btn-success" onclick="completeTask(${task.id})">완료</button>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="endTime" class="form-label">종료 시간</label>
-                                <input type="datetime-local" class="form-control" id="endTime">
-                            </div>
-                        </div>
                     </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
-                <button type="button" class="btn btn-primary" onclick="saveTask()">저장</button>
-            </div>
-        </div>
-    </div>
-</div>
+                `;
+            });
+            currentTasksDiv.innerHTML = currentTasksHTML;
+        }
+        
+        // 완료된 업무
+        const completedTasks = tasks.filter(task => task.status === '완료');
+        const completedTasksTbody = document.getElementById('completedTasks');
+        
+        if (completedTasks.length === 0) {
+            completedTasksTbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">완료된 업무가 없습니다.</td></tr>';
+        } else {
+            let completedTasksHTML = '';
+            completedTasks.forEach(task => {
+                const startTime = new Date(task.start_time).toLocaleString();
+                const endTime = new Date(task.end_time).toLocaleString();
+                const duration = calculateDuration(task.start_time, task.end_time);
+                
+                completedTasksHTML += `
+                    <tr>
+                        <td>${task.task_type}</td>
+                        <td>${task.description || '설명 없음'}</td>
+                        <td>${startTime}</td>
+                        <td>${endTime}</td>
+                        <td>${duration}</td>
+                    </tr>
+                `;
+            });
+            completedTasksTbody.innerHTML = completedTasksHTML;
+        }
+    } catch (error) {
+        console.error('업무 목록 불러오기 실패:', error);
+    }
+}
+
+// 업무 완료
+async function completeTask(taskId) {
+    try {
+        const response = await fetch(`/api/tasks/${taskId}/complete`, {
+            method: 'PUT'
+        });
+        
+        if (response.ok) {
+            loadTasks();
+        } else {
+            const error = await response.json();
+            alert(error.error || '업무 완료 처리에 실패했습니다.');
+        }
+    } catch (error) {
+        alert('업무 완료 처리 중 오류가 발생했습니다.');
+    }
+}
+
+// 소요 시간 계산
+function calculateDuration(startTime, endTime) {
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+    const diff = end - start;
+    
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    
+    if (hours > 0) {
+        return `${hours}시간 ${minutes}분`;
+    } else {
+        return `${minutes}분`;
+    }
+}
+</script>
 {% endblock %} 

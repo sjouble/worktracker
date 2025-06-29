@@ -11,9 +11,9 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
             <a class="navbar-brand" href="{{ url_for('dashboard') }}">WorkTracker</a>
-            {% if session.user %}
+            {% if session.get('user') %}
             <div class="navbar-nav ms-auto">
-                <span class="navbar-text me-3">{{ session.user.email }}</span>
+                <span class="navbar-text me-3">{{ session.user.username }}</span>
                 <a class="nav-link" href="{{ url_for('logout') }}">로그아웃</a>
             </div>
             {% endif %}

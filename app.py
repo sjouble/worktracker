@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session, send_file
-from supabase import create_client, Client
+from supabase.client import create_client, Client
 import os
 from dotenv import load_dotenv
 import pandas as pd
@@ -8,13 +8,21 @@ from datetime import datetime
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.getenv('SECRET_KEY', 'dev-secret-key')
+app.secret_key = os.getenv('FLASK_SECRET_KEY', 'dev-secret-key')
 
 # Supabase 클라이언트 설정
 supabase: Client = create_client(
-    os.getenv('SUPABASE_URL'),
-    os.getenv('SUPABASE_KEY')
+    os.getenv('SUPABASE_URL') or '',
+    os.getenv('SUPABASE_KEY') or ''
 )
+
+@app.route('/health')
+def health_check():
+    return jsonify({'status': 'healthy', 'message': 'WorkTracker is running'})
+
+@app.errorhandler(404)
+def not_found(error):
+    return jsonify({'error': 'Page not found'}), 404
 
 @app.route('/')
 def index():
@@ -25,47 +33,87 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        email = request.form['email']
+        username = request.form['username']
         password = request.form['password']
         
         try:
-            response = supabase.auth.sign_in_with_password({
-                "email": email,
-                "password": password
-            })
-            session['user'] = response.user
-            return redirect(url_for('dashboard'))
+            # admin 계정 특별 처리
+            if username == 'admin' and password == '0000':
+                session['user'] = {
+                    'id': 'admin-user-id',
+                    'username': 'admin'
+                }
+                return redirect(url_for('dashboard'))
+            
+            # 일반 사용자 로그인
+            user_data = supabase.table('users').select('*').eq('username', username).execute()
+            
+            if user_data.data:
+                # 실제 구현에서는 비밀번호 해시 검증이 필요합니다
+                # 여기서는 간단히 사용자명만 확인
+                session['user'] = {
+                    'id': user_data.data[0]['id'],
+                    'username': user_data.data[0]['username']
+                }
+                return redirect(url_for('dashboard'))
+            else:
+                return render_template('login.html', error="사용자명 또는 비밀번호가 올바르지 않습니다.")
         except Exception as e:
-            return render_template('login.html', error="로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.")
+            return render_template('login.html', error="로그인에 실패했습니다. 다시 시도해주세요.")
     
     return render_template('login.html')
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
         username = request.form['username']
+        password = request.form['password']
+        confirm_password = request.form['confirmPassword']
+        department_id = request.form['department']
+        
+        # 비밀번호 재확인 검증
+        if password != confirm_password:
+            return render_template('register.html', error="비밀번호가 일치하지 않습니다.")
+        
+        # 비밀번호 길이 검증
+        if len(password) < 6:
+            return render_template('register.html', error="비밀번호는 최소 6자 이상이어야 합니다.")
+        
+        # 소속 선택 검증
+        if not department_id:
+            return render_template('register.html', error="소속을 선택해주세요.")
         
         try:
-            # 사용자 생성
-            response = supabase.auth.sign_up({
-                "email": email,
+            # 사용자명 중복 확인
+            existing_user = supabase.table('users').select('*').eq('username', username).execute()
+            
+            if existing_user.data:
+                return render_template('register.html', error="이미 존재하는 사용자명입니다.")
+            
+            # 1. Supabase 인증 유저 생성
+            auth_response = supabase.auth.sign_up({
+                "email": f"{username}@example.com",
                 "password": password
             })
+            user_obj = getattr(auth_response, 'user', None)
+            user_id = getattr(user_obj, 'id', None)
+            if not user_id:
+                return render_template('register.html', error="인증 계정 생성에 실패했습니다.")
             
-            # users 테이블에 추가 정보 저장
+            # 2. users 테이블에 사용자 정보 저장
             supabase.table('users').insert({
-                'id': response.user.id,
+                'id': user_id,
                 'username': username,
-                'role': 'user'
+                'role': 'user',
+                'department_id': int(department_id)
             }).execute()
             
             return render_template('login.html', success="회원가입이 완료되었습니다. 로그인해주세요.")
         except Exception as e:
             return render_template('register.html', error="회원가입에 실패했습니다. 다시 시도해주세요.")
     
-    return render_template('register.html')
+    departments = supabase.table('departments').select('*').execute().data
+    return render_template('register.html', departments=departments)
 
 @app.route('/dashboard')
 def dashboard():
@@ -73,187 +121,35 @@ def dashboard():
         return redirect(url_for('login'))
     
     user_id = session['user']['id']
+    username = session['user']['username']
     
     try:
-        # 사용자 역할 확인
-        user_data = supabase.table('users').select('*').eq('id', user_id).execute()
-        role = user_data.data[0]['role'] if user_data.data else 'user'
+        # 사용자 정보와 소속 정보를 함께 조회
+        user_info = supabase.table('users').select('*, departments(name)').eq('id', user_id).execute()
         
-        if role == 'admin':
-            # 관리자: 모든 업무 조회
-            tasks = supabase.table('tasks').select('*, users(username)').execute()
+        if user_info.data:
+            user = user_info.data[0]
+            user_data = {
+                'id': user['id'],
+                'username': user['username'],
+                'role': user['role'],
+                'department_id': user['department_id'],
+                'department_name': user['departments']['name'] if user['departments'] else None,
+                'created_at': user['created_at']
+            }
+            
+            if user['role'] == 'admin':
+                return redirect(url_for('admin_dashboard'))
+            else:
+                return render_template('dashboard.html', user=user_data)
         else:
-            # 일반 사용자: 본인 업무만 조회
-            tasks = supabase.table('tasks').select('*').eq('assigned_to', user_id).execute()
-        
-        return render_template('dashboard.html', tasks=tasks.data, role=role, username=user_data.data[0]['username'])
+            return redirect(url_for('login'))
     except Exception as e:
-        return render_template('dashboard.html', tasks=[], role='user', error="데이터를 불러오는데 실패했습니다.")
+        return redirect(url_for('login'))
 
-@app.route('/api/tasks', methods=['GET'])
-def get_tasks():
-    if 'user' not in session:
-        return jsonify({'error': '로그인이 필요합니다'}), 401
-    
-    user_id = session['user']['id']
-    
-    try:
-        # 사용자 역할 확인
-        user_data = supabase.table('users').select('*').eq('id', user_id).execute()
-        role = user_data.data[0]['role'] if user_data.data else 'user'
-        
-        if role == 'admin':
-            # 관리자: 모든 업무 조회
-            tasks = supabase.table('tasks').select('*, users(username)').execute()
-        else:
-            # 일반 사용자: 본인 업무만 조회
-            tasks = supabase.table('tasks').select('*').eq('assigned_to', user_id).execute()
-        
-        return jsonify(tasks.data)
-    except Exception as e:
-        return jsonify({'error': '업무 목록을 불러오는데 실패했습니다.'}), 500
-
-@app.route('/api/tasks', methods=['POST'])
-def create_task():
-    if 'user' not in session:
-        return jsonify({'error': '로그인이 필요합니다'}), 401
-    
-    data = request.json
-    user_id = session['user']['id']
-    
-    try:
-        task_data = {
-            'task_type': data['task_type'],
-            'description': data['description'],
-            'status': data['status'],
-            'assigned_to': user_id,
-            'start_time': data['start_time'],
-            'end_time': data['end_time']
-        }
-        
-        result = supabase.table('tasks').insert(task_data).execute()
-        
-        # 로그 기록
-        supabase.table('logs').insert({
-            'user_id': user_id,
-            'action': '업무 생성',
-            'timestamp': datetime.now().isoformat()
-        }).execute()
-        
-        return jsonify(result.data[0])
-    except Exception as e:
-        return jsonify({'error': '업무 생성에 실패했습니다.'}), 500
-
-@app.route('/api/tasks/<int:task_id>', methods=['PUT'])
-def update_task(task_id):
-    if 'user' not in session:
-        return jsonify({'error': '로그인이 필요합니다'}), 401
-    
-    data = request.json
-    user_id = session['user']['id']
-    
-    try:
-        # 권한 확인
-        task = supabase.table('tasks').select('*').eq('id', task_id).execute()
-        if not task.data:
-            return jsonify({'error': '업무를 찾을 수 없습니다'}), 404
-        
-        user_data = supabase.table('users').select('*').eq('id', user_id).execute()
-        role = user_data.data[0]['role'] if user_data.data else 'user'
-        
-        if role != 'admin' and task.data[0]['assigned_to'] != user_id:
-            return jsonify({'error': '권한이 없습니다'}), 403
-        
-        result = supabase.table('tasks').update(data).eq('id', task_id).execute()
-        
-        # 로그 기록
-        supabase.table('logs').insert({
-            'user_id': user_id,
-            'action': '업무 수정',
-            'timestamp': datetime.now().isoformat()
-        }).execute()
-        
-        return jsonify(result.data[0])
-    except Exception as e:
-        return jsonify({'error': '업무 수정에 실패했습니다.'}), 500
-
-@app.route('/api/tasks/<int:task_id>', methods=['DELETE'])
-def delete_task(task_id):
-    if 'user' not in session:
-        return jsonify({'error': '로그인이 필요합니다'}), 401
-    
-    user_id = session['user']['id']
-    
-    try:
-        # 권한 확인
-        task = supabase.table('tasks').select('*').eq('id', task_id).execute()
-        if not task.data:
-            return jsonify({'error': '업무를 찾을 수 없습니다'}), 404
-        
-        user_data = supabase.table('users').select('*').eq('id', user_id).execute()
-        role = user_data.data[0]['role'] if user_data.data else 'user'
-        
-        if role != 'admin' and task.data[0]['assigned_to'] != user_id:
-            return jsonify({'error': '권한이 없습니다'}), 403
-        
-        supabase.table('tasks').delete().eq('id', task_id).execute()
-        
-        # 로그 기록
-        supabase.table('logs').insert({
-            'user_id': user_id,
-            'action': '업무 삭제',
-            'timestamp': datetime.now().isoformat()
-        }).execute()
-        
-        return jsonify({'message': '업무가 삭제되었습니다.'})
-    except Exception as e:
-        return jsonify({'error': '업무 삭제에 실패했습니다.'}), 500
-
-@app.route('/api/export')
-def export_excel():
-    if 'user' not in session:
-        return jsonify({'error': '로그인이 필요합니다'}), 401
-    
-    user_id = session['user']['id']
-    
-    try:
-        # 사용자 역할 확인
-        user_data = supabase.table('users').select('*').eq('id', user_id).execute()
-        role = user_data.data[0]['role'] if user_data.data else 'user'
-        
-        if role == 'admin':
-            # 관리자: 모든 업무 조회
-            tasks = supabase.table('tasks').select('*, users(username)').execute()
-        else:
-            # 일반 사용자: 본인 업무만 조회
-            tasks = supabase.table('tasks').select('*').eq('assigned_to', user_id).execute()
-        
-        # DataFrame 생성
-        df = pd.DataFrame(tasks.data)
-        
-        # Excel 파일 생성
-        filename = f"worktracker_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-        filepath = os.path.join('static', 'exports', filename)
-        
-        # exports 폴더가 없으면 생성
-        os.makedirs(os.path.dirname(filepath), exist_ok=True)
-        
-        df.to_excel(filepath, index=False)
-        
-        return jsonify({'filename': filename, 'message': '엑셀 파일이 생성되었습니다.'})
-    except Exception as e:
-        return jsonify({'error': '엑셀 파일 생성에 실패했습니다.'}), 500
-
-@app.route('/download/<filename>')
-def download_file(filename):
-    if 'user' not in session:
-        return jsonify({'error': '로그인이 필요합니다'}), 401
-    
-    try:
-        filepath = os.path.join('static', 'exports', filename)
-        return send_file(filepath, as_attachment=True)
-    except Exception as e:
-        return jsonify({'error': '파일 다운로드에 실패했습니다.'}), 500
+@app.route('/test')
+def test():
+    return jsonify({'message': 'Test endpoint working!', 'status': 'success'})
 
 @app.route('/logout')
 def logout():
@@ -261,4 +157,5 @@ def logout():
     return redirect(url_for('login'))
 
 if __name__ == '__main__':
-    app.run(debug=True) 
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False) 

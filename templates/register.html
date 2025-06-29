@@ -17,18 +17,30 @@
                 <div class="alert alert-success">{{ success }}</div>
                 {% endif %}
                 
-                <form method="POST">
+                <form method="POST" id="registerForm">
                     <div class="mb-3">
                         <label for="username" class="form-label">사용자명</label>
                         <input type="text" class="form-control" id="username" name="username" required>
                     </div>
                     <div class="mb-3">
-                        <label for="email" class="form-label">이메일</label>
-                        <input type="email" class="form-control" id="email" name="email" required>
+                        <label for="department" class="form-label">소속</label>
+                        <select class="form-select" id="department" name="department" required>
+                            <option value="">소속을 선택하세요</option>
+                            {% for dept in departments %}
+                                <option value="{{ dept.id }}">{{ dept.name }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
                     <div class="mb-3">
                         <label for="password" class="form-label">비밀번호</label>
                         <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="confirmPassword" class="form-label">비밀번호 재확인</label>
+                        <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required>
+                        <div class="invalid-feedback" id="passwordError">
+                            비밀번호가 일치하지 않습니다.
+                        </div>
                     </div>
                     <button type="submit" class="btn btn-primary w-100">회원가입</button>
                 </form>
@@ -40,4 +52,37 @@
         </div>
     </div>
 </div>
+
+<script>
+document.getElementById('registerForm').addEventListener('submit', function(e) {
+    const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    const passwordError = document.getElementById('passwordError');
+    const confirmPasswordField = document.getElementById('confirmPassword');
+    
+    if (password !== confirmPassword) {
+        e.preventDefault();
+        confirmPasswordField.classList.add('is-invalid');
+        passwordError.style.display = 'block';
+    } else {
+        confirmPasswordField.classList.remove('is-invalid');
+        passwordError.style.display = 'none';
+    }
+});
+
+// 비밀번호 입력 시 실시간 확인
+document.getElementById('confirmPassword').addEventListener('input', function() {
+    const password = document.getElementById('password').value;
+    const confirmPassword = this.value;
+    const passwordError = document.getElementById('passwordError');
+    
+    if (confirmPassword && password !== confirmPassword) {
+        this.classList.add('is-invalid');
+        passwordError.style.display = 'block';
+    } else {
+        this.classList.remove('is-invalid');
+        passwordError.style.display = 'none';
+    }
+});
+</script>
 {% endblock %} 

@@ -17,7 +17,7 @@
 ```
 SUPABASE_URL=your_supabase_project_url
 SUPABASE_KEY=your_supabase_anon_key
-SECRET_KEY=your_random_secret_key
+FLASK_SECRET_KEY=your_random_secret_key
 ```
 
 ## 2. 로컬 개발 환경
@@ -45,11 +45,11 @@ python app.py
 CloudType 대시보드에서 환경 변수 설정:
 - `SUPABASE_URL`
 - `SUPABASE_KEY`
-- `SECRET_KEY`
+- `FLASK_SECRET_KEY`
 
 ### 3.3 배포 설정
 - **빌드 명령어**: `pip install -r requirements.txt`
-- **실행 명령어**: `python app.py`
+- **실행 명령어**: `gunicorn --bind 0.0.0.0:5000 app:app`
 - **포트**: 5000
 
 ## 4. 관리자 계정 생성
