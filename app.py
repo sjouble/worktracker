@@ -118,15 +118,9 @@ def register():
     except Exception as e:
         # RLS 정책 문제로 departments 조회 실패 시 기본 데이터 사용
         departments = [
-            {'id': 1, 'name': '인출팀'},
-            {'id': 2, 'name': '보충팀'},
-            {'id': 3, 'name': '입고지원팀'},
-            {'id': 4, 'name': '미출대응팀'},
-            {'id': 5, 'name': '단내리기팀'},
-            {'id': 6, 'name': '이고팀'},
-            {'id': 7, 'name': '과출팀'},
-            {'id': 8, 'name': '파손팀'},
-            {'id': 9, 'name': '기타팀'}
+            {'id': 1, 'name': 'B동입고'},
+            {'id': 2, 'name': 'A지상보충'},
+            {'id': 3, 'name': 'A지하보충'}
         ]
     
     return render_template('register.html', departments=departments)
