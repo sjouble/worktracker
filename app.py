@@ -3,14 +3,21 @@ from supabase.client import create_client, Client
 import os
 from dotenv import load_dotenv
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, date
 import uuid
 from typing import Optional
+import logging
 
-load_dotenv()
+# 로깅 설정
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# 환경 변수 로드 (로컬 개발용)
+if os.path.exists('.env'):
+    load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.getenv('FLASK_SECRET_KEY', 'dev-secret-key')
+app.secret_key = os.getenv('FLASK_SECRET_KEY', 'dev-secret-key-change-in-production')
 
 # Supabase 클라이언트 설정
 supabase: Optional[Client] = None
@@ -19,14 +26,13 @@ try:
     supabase_key = os.getenv('SUPABASE_KEY')
     
     if not supabase_url or not supabase_key:
-        print("⚠️ Supabase 환경 변수가 설정되지 않았습니다.")
-        supabase_url = 'https://cnooukcuxxqgfiuvrmuk.supabase.co'
-        supabase_key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNub291a2N1eHhxZ2ZpdXZybXVrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTExMzI5MzQsImV4cCI6MjA2NjcwODkzNH0.GPLp7y2BTXKI6kY7sd_9KEeZD-l1KqR4dMavZjD2_Qc'
+        logger.error("⚠️ Supabase 환경 변수가 설정되지 않았습니다.")
+        raise ValueError("SUPABASE_URL과 SUPABASE_KEY가 필요합니다.")
     
     supabase = create_client(supabase_url, supabase_key)
-    print("✅ Supabase 연결 성공")
+    logger.info("✅ Supabase 연결 성공")
 except Exception as e:
-    print(f"❌ Supabase 연결 실패: {e}")
+    logger.error(f"❌ Supabase 연결 실패: {e}")
     supabase = None
 
 @app.route('/health')
@@ -49,6 +55,10 @@ def login():
         username = request.form['username']
         password = request.form['password']
         
+        # Supabase 연결 확인
+        if not supabase:
+            return render_template('login.html', error="데이터베이스 연결에 문제가 있습니다. 관리자에게 문의하세요.")
+        
         try:
             # admin 계정 특별 처리
             if username == 'admin' and password == '0000':
@@ -57,7 +67,7 @@ def login():
                     'username': 'admin',
                     'role': 'admin'
                 }
-                print("관리자 로그인 성공")  # 디버깅용
+                logger.info("관리자 로그인 성공")
                 return redirect(url_for('admin_dashboard'))
             
             # 일반 사용자 로그인 (사용자명만 확인)
@@ -70,12 +80,12 @@ def login():
                     'id': user_data.data[0]['id'],
                     'username': user_data.data[0]['username']
                 }
-                print(f"사용자 로그인 성공: {username}")  # 디버깅용
+                logger.info(f"사용자 로그인 성공: {username}")
                 return redirect(url_for('dashboard'))
             else:
                 return render_template('login.html', error="사용자명 또는 비밀번호가 올바르지 않습니다.")
         except Exception as e:
-            print(f"로그인 에러: {e}")  # 디버깅용
+            logger.error(f"로그인 에러: {e}")
             return render_template('login.html', error="로그인에 실패했습니다. 다시 시도해주세요.")
     
     # 세션에서 성공 메시지 가져오기
@@ -111,7 +121,7 @@ def register():
                 return jsonify({'error': '회원가입 실패'}), 400
                 
         except Exception as e:
-            print(f"회원가입 에러: {e}")
+            logger.error(f"회원가입 에러: {e}")
             return jsonify({'error': f'회원가입 중 오류가 발생했습니다: {str(e)}'}), 500
     
     return render_template('register.html')
@@ -123,6 +133,10 @@ def dashboard():
     
     user_id = session['user']['id']
     username = session['user']['username']
+    
+    # Supabase 연결 확인
+    if not supabase:
+        return render_template('error.html', error="데이터베이스 연결에 문제가 있습니다.")
     
     try:
         # 관리자 계정 특별 처리
@@ -150,6 +164,7 @@ def dashboard():
         else:
             return redirect(url_for('login'))
     except Exception as e:
+        logger.error(f"대시보드 에러: {e}")
         return redirect(url_for('login'))
 
 @app.route('/admin_dashboard')
@@ -159,6 +174,10 @@ def admin_dashboard():
     
     user_id = session['user']['id']
     username = session['user']['username']
+    
+    # Supabase 연결 확인
+    if not supabase:
+        return render_template('error.html', error="데이터베이스 연결에 문제가 있습니다.")
     
     # 관리자 권한 확인
     if username != 'admin':
@@ -173,20 +192,20 @@ def admin_dashboard():
         # 관리자용 데이터 로드
         departments = supabase.table('departments').select('*').execute().data
         users = supabase.table('users').select('*, departments(name)').execute().data
-        tasks = supabase.table('tasks').select('*, users(username)').execute().data
+        work_logs = supabase.table('work_logs').select('*, users(username)').execute().data
         
         return render_template('admin_dashboard.html', 
                              user={'username': username, 'role': 'admin'},
                              departments=departments,
                              users=users,
-                             tasks=tasks)
+                             work_logs=work_logs)
     except Exception as e:
-        print(f"관리자 대시보드 에러: {e}")
+        logger.error(f"관리자 대시보드 에러: {e}")
         return render_template('admin_dashboard.html', 
                              user={'username': username, 'role': 'admin'},
                              departments=[],
                              users=[],
-                             tasks=[])
+                             work_logs=[])
 
 @app.route('/test')
 def test():

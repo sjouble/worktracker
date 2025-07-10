@@ -1,9 +1,0 @@
-name: worktracker
-app:
-  build:
-    python_version: "3.9"
-    requirements_path: requirements.txt
-  run:
-    command: gunicorn --bind 0.0.0.0:5000 app:app
-  port: 5000
-  static_dir: static 

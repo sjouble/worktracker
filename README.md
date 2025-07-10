@@ -27,8 +27,31 @@ WorkTracker는 사용자별 업무를 추적하고 관리하는 웹 애플리케
 - **Database**: Supabase (PostgreSQL)
 - **Frontend**: HTML, CSS, JavaScript, Bootstrap 5
 - **Authentication**: Session-based
+- **Deployment**: Render
 
-## 설치 및 실행
+## 배포 방법 (Render)
+
+### 1. Supabase 설정
+
+1. [Supabase](https://supabase.com)에서 새 프로젝트 생성
+2. SQL 편집기에서 `supabase/init_database.sql` 실행
+3. RLS 정책 설정 확인 (`supabase/rls_policies.sql`)
+
+### 2. Render 배포
+
+1. [Render](https://render.com)에서 새 Web Service 생성
+2. GitHub 저장소 연결
+3. 환경 변수 설정:
+   - `SUPABASE_URL`: Supabase 프로젝트 URL
+   - `SUPABASE_KEY`: Supabase anon key
+   - `FLASK_SECRET_KEY`: Flask 시크릿 키 (자동 생성됨)
+
+### 3. 자동 배포
+
+- `render.yaml` 파일이 포함되어 있어 자동으로 설정됩니다
+- GitHub에 푸시하면 자동으로 배포됩니다
+
+## 로컬 개발
 
 ### 1. 환경 설정
 
@@ -51,13 +74,7 @@ SUPABASE_KEY=your_supabase_anon_key
 FLASK_SECRET_KEY=your_secret_key
 ```
 
-### 3. 데이터베이스 설정
-
-1. Supabase 프로젝트 생성
-2. SQL 편집기에서 `supabase/init.sql` 실행
-3. RLS 정책 설정 확인
-
-### 4. 애플리케이션 실행
+### 3. 애플리케이션 실행
 
 ```bash
 python app.py
@@ -96,21 +113,16 @@ python app.py
 - `department_id`: 소속 ID (Foreign Key)
 - `created_at`: 가입일시
 
-### tasks (업무)
-- `id`: 업무 ID (Primary Key)
-- `task_type`: 업무 유형
-- `description`: 업무 설명
-- `status`: 상태 (진행중/완료)
-- `assigned_to`: 담당자 ID (Foreign Key)
-- `start_time`: 시작 시간
-- `end_time`: 종료 시간
-- `created_at`: 생성일시
-
-### logs (로그)
+### work_logs (업무 로그)
 - `id`: 로그 ID (Primary Key)
 - `user_id`: 사용자 ID (Foreign Key)
-- `action`: 수행한 작업
-- `timestamp`: 작업 시간
+- `department_id`: 소속 ID (Foreign Key)
+- `work_date`: 업무 날짜
+- `start_time`: 시작 시간
+- `end_time`: 종료 시간
+- `work_hours`: 소요 시간
+- `description`: 업무 설명
+- `created_at`: 생성일시
 
 ## API 엔드포인트
 
@@ -125,11 +137,10 @@ python app.py
 - `GET /admin_dashboard` - 관리자 대시보드
 
 ### 업무 관리
-- `GET /api/tasks` - 업무 목록 조회
-- `POST /api/tasks` - 새 업무 생성
-- `PUT /api/tasks/<id>` - 업무 수정
-- `DELETE /api/tasks/<id>` - 업무 삭제
-- `PUT /api/tasks/<id>/complete` - 업무 완료
+- `GET /api/work_logs` - 업무 로그 목록 조회
+- `POST /api/work_logs` - 새 업무 로그 생성
+- `PUT /api/work_logs/<id>` - 업무 로그 수정
+- `DELETE /api/work_logs/<id>` - 업무 로그 삭제
 
 ### 소속 관리 (관리자 전용)
 - `GET /api/departments` - 소속 목록 조회
@@ -147,6 +158,24 @@ python app.py
 - 관리자 권한 검증
 - 사용자별 데이터 접근 제한
 - 세션 기반 인증
+
+## 파일 구조
+
+```
+worktracker/
+├── app.py                 # 메인 Flask 애플리케이션
+├── wsgi.py               # WSGI 진입점
+├── requirements.txt      # Python 의존성
+├── render.yaml          # Render 배포 설정
+├── Procfile             # Heroku/Render 프로세스 설정
+├── .env.example         # 환경 변수 예시
+├── supabase/
+│   ├── init_database.sql # 데이터베이스 초기화
+│   └── rls_policies.sql  # RLS 정책
+├── templates/           # HTML 템플릿
+├── static/             # 정적 파일 (CSS, JS)
+└── docs/              # 문서
+```
 
 ## 라이선스
 

@@ -1,112 +1,141 @@
-# WorkTracker 배포 가이드
+# WorkTracker Render 배포 가이드
 
-## 1. Supabase 설정
+이 문서는 WorkTracker 애플리케이션을 Render에서 배포하는 방법을 설명합니다.
 
-### 1.1 Supabase 프로젝트 생성
-1. [Supabase](https://supabase.com)에 로그인
-2. 새 프로젝트 생성
-3. 프로젝트 URL과 API 키 확인
+## 사전 준비
 
-### 1.2 데이터베이스 초기화
-1. Supabase Dashboard → SQL Editor
-2. `supabase/init.sql` 파일의 내용을 실행
-3. 테이블과 RLS 정책이 생성되었는지 확인
+### 1. Supabase 프로젝트 설정
 
-### 1.3 환경 변수 설정
-`.env` 파일을 생성하고 다음 내용을 입력:
-```
-SUPABASE_URL=your_supabase_project_url
-SUPABASE_KEY=your_supabase_anon_key
-FLASK_SECRET_KEY=your_random_secret_key
-```
+1. [Supabase](https://supabase.com)에 가입하고 새 프로젝트 생성
+2. 프로젝트 생성 후 Settings > API에서 다음 정보 확인:
+   - Project URL
+   - anon public key
 
-## 2. 로컬 개발 환경
+### 2. 데이터베이스 초기화
 
-### 2.1 의존성 설치
-```bash
-pip install -r requirements.txt
-```
+1. Supabase 대시보드에서 SQL Editor 열기
+2. `supabase/init_database.sql` 파일의 내용을 복사하여 실행
+3. `supabase/rls_policies.sql` 파일의 내용도 실행
 
-### 2.2 애플리케이션 실행
-```bash
-python app.py
-```
+## Render 배포
 
-### 2.3 접속
-브라우저에서 `http://localhost:5000` 접속
+### 1. GitHub 저장소 준비
 
-## 3. CloudType 배포
+1. 프로젝트를 GitHub 저장소에 푸시
+2. 저장소가 공개되어 있는지 확인
 
-### 3.1 GitHub 저장소 연결
-1. GitHub에 코드 푸시
-2. CloudType에서 GitHub 저장소 연결
+### 2. Render 서비스 생성
 
-### 3.2 환경 변수 설정
-CloudType 대시보드에서 환경 변수 설정:
-- `SUPABASE_URL`
-- `SUPABASE_KEY`
-- `FLASK_SECRET_KEY`
+1. [Render](https://render.com)에 가입/로그인
+2. "New +" 버튼 클릭 후 "Web Service" 선택
+3. GitHub 저장소 연결
+4. 저장소 선택 후 다음 설정 적용:
 
-### 3.3 배포 설정
-- **빌드 명령어**: `pip install -r requirements.txt`
-- **실행 명령어**: `gunicorn --bind 0.0.0.0:5000 app:app`
-- **포트**: 5000
+#### 기본 설정
+- **Name**: worktracker (또는 원하는 이름)
+- **Environment**: Python 3
+- **Build Command**: `pip install -r requirements.txt`
+- **Start Command**: `gunicorn wsgi:app`
 
-## 4. 관리자 계정 생성
+#### 환경 변수 설정
+- **SUPABASE_URL**: Supabase 프로젝트 URL
+- **SUPABASE_KEY**: Supabase anon public key
+- **FLASK_SECRET_KEY**: 랜덤 문자열 (자동 생성됨)
 
-### 4.1 첫 번째 사용자 등록
-1. 일반 사용자로 회원가입
-2. Supabase Dashboard → Table Editor → users
-3. 해당 사용자의 role을 'admin'으로 변경
+### 3. 자동 배포 설정
 
-### 4.2 SQL로 관리자 생성
-```sql
-UPDATE users 
-SET role = 'admin' 
-WHERE email = 'admin@example.com';
+- **Auto-Deploy**: Yes (기본값)
+- **Branch**: main (또는 사용하는 브랜치)
+
+### 4. 배포 완료
+
+배포가 완료되면 Render에서 제공하는 URL로 접속 가능합니다.
+
+## 환경 변수 관리
+
+### 로컬 개발용 (.env 파일)
+
+```env
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_KEY=your-anon-key
+FLASK_SECRET_KEY=your-secret-key
 ```
 
-## 5. 보안 고려사항
+### Render 환경 변수
 
-### 5.1 환경 변수
-- `.env` 파일을 `.gitignore`에 추가
-- 프로덕션에서는 환경 변수 사용
+Render 대시보드에서 Environment Variables 섹션에서 설정:
 
-### 5.2 RLS 정책
-- Supabase RLS가 활성화되어 있는지 확인
-- 사용자별 데이터 접근 제한 확인
+| 변수명 | 설명 | 예시 |
+|--------|------|------|
+| SUPABASE_URL | Supabase 프로젝트 URL | https://abc123.supabase.co |
+| SUPABASE_KEY | Supabase anon key | eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9... |
+| FLASK_SECRET_KEY | Flask 시크릿 키 | 자동 생성됨 |
 
-### 5.3 HTTPS
-- 프로덕션 환경에서는 HTTPS 사용 필수
+## 문제 해결
 
-## 6. 모니터링 및 로그
+### 일반적인 문제들
 
-### 6.1 로그 확인
-- Supabase Dashboard → Logs
-- 애플리케이션 로그 확인
+1. **Supabase 연결 실패**
+   - 환경 변수가 올바르게 설정되었는지 확인
+   - Supabase 프로젝트가 활성 상태인지 확인
 
-### 6.2 성능 모니터링
-- Supabase Dashboard → Analytics
-- 데이터베이스 성능 확인
+2. **빌드 실패**
+   - requirements.txt 파일이 올바른지 확인
+   - Python 버전 호환성 확인
 
-## 7. 백업 및 복구
+3. **애플리케이션 시작 실패**
+   - 로그 확인 (Render 대시보드 > Logs)
+   - wsgi.py 파일이 올바른지 확인
 
-### 7.1 데이터 백업
-- Supabase Dashboard → Settings → Database
-- 정기적인 백업 설정
+### 로그 확인
 
-### 7.2 코드 백업
-- GitHub 저장소 활용
-- 정기적인 커밋 및 푸시
+Render 대시보드에서:
+1. 서비스 선택
+2. "Logs" 탭 클릭
+3. 실시간 로그 확인
 
-## 8. 문제 해결
+## 보안 고려사항
 
-### 8.1 일반적인 문제
-- **연결 오류**: 환경 변수 확인
-- **권한 오류**: RLS 정책 확인
-- **파일 업로드 오류**: exports 폴더 권한 확인
+1. **환경 변수 보호**
+   - 민감한 정보는 환경 변수로 관리
+   - .env 파일을 .gitignore에 포함
 
-### 8.2 로그 확인
-- Flask 애플리케이션 로그
-- Supabase 로그
-- 브라우저 개발자 도구 콘솔 
+2. **Supabase RLS 정책**
+   - 데이터베이스 레벨 보안 정책 적용
+   - 사용자별 데이터 접근 제한
+
+3. **HTTPS 사용**
+   - Render는 자동으로 HTTPS 제공
+   - 프로덕션에서는 항상 HTTPS 사용
+
+## 모니터링
+
+### Render 대시보드에서 확인 가능한 정보
+
+- 서비스 상태 (Healthy/Unhealthy)
+- 응답 시간
+- 에러율
+- 리소스 사용량
+
+### 알림 설정
+
+- 서비스 다운 시 이메일 알림
+- 에러율 임계값 설정
+
+## 업데이트 및 유지보수
+
+### 코드 업데이트
+
+1. 로컬에서 코드 수정
+2. GitHub에 푸시
+3. Render에서 자동 배포
+
+### 데이터베이스 마이그레이션
+
+1. Supabase SQL Editor에서 스크립트 실행
+2. 애플리케이션 재시작 (필요시)
+
+### 백업
+
+- Supabase는 자동 백업 제공
+- 정기적인 데이터베이스 백업 권장 
