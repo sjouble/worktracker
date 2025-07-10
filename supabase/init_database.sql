@@ -8,13 +8,11 @@ DROP TABLE IF EXISTS work_logs CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS departments CASCADE;
 
--- 기존 함수 및 트리거 삭제
-DROP TRIGGER IF EXISTS update_users_updated_at ON users;
-DROP TRIGGER IF EXISTS update_work_logs_updated_at ON work_logs;
-DROP FUNCTION IF EXISTS update_updated_at_column();
-
--- 기존 뷰 삭제
+-- 기존 뷰 삭제 (테이블과 독립적)
 DROP VIEW IF EXISTS user_summary;
+
+-- 기존 함수 삭제 (테이블과 독립적)
+DROP FUNCTION IF EXISTS update_updated_at_column();
 
 -- departments 테이블 생성
 CREATE TABLE departments (
