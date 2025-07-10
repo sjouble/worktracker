@@ -32,7 +32,6 @@ Content-Type: application/x-www-form-urlencoded
 Parameters:
 - username: string (required)
 - password: string (required)
-- email: string (required)
 
 Response:
 {
@@ -284,7 +283,6 @@ Response:
     {
       "id": "uuid",
       "username": "사용자명",
-      "email": "user@example.com",
       "role": "user",
       "department_id": 1,
       "created_at": "2024-01-01T00:00:00Z",
@@ -377,7 +375,6 @@ Response:
 {
   "id": "uuid",
   "username": "string",
-  "email": "string",
   "role": "user|admin",
   "department_id": "integer",
   "created_at": "datetime"

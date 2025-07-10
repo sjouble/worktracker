@@ -97,7 +97,6 @@ def register():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        email = request.form['email']
         
         if not supabase:
             return jsonify({'error': 'Supabase 연결이 없습니다.'}), 500
@@ -110,8 +109,7 @@ def register():
             result = supabase.table('users').insert({
                 'id': user_id,
                 'username': username,
-                'email': email,
-                'password': password,  # 실제로는 해시화해야 함
+                'password_hash': password,  # 실제로는 해시화해야 함
                 'created_at': datetime.now().isoformat()
             }).execute()
             
