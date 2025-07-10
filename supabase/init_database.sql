@@ -46,9 +46,9 @@ INSERT INTO departments (name) VALUES
     ('A지상보충'),
     ('A지하보충');
 
--- 관리자 계정 생성 (비밀번호: admin123)
+-- 관리자 계정 생성 (비밀번호: 0000)
 INSERT INTO users (username, email, password_hash, role) VALUES 
-    ('admin', 'admin@worktracker.com', 'admin123', 'admin');
+    ('admin', 'admin@worktracker.com', '0000', 'admin');
 
 -- 인덱스 생성
 CREATE INDEX idx_users_username ON users(username);
