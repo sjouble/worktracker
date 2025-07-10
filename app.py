@@ -97,6 +97,7 @@ def register():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
+        department_id = request.form.get('department')
         
         if not supabase:
             return jsonify({'error': 'Supabase 연결이 없습니다.'}), 500
@@ -106,12 +107,18 @@ def register():
             user_id = str(uuid.uuid4())
             
             # 사용자 정보 저장
-            result = supabase.table('users').insert({
+            user_data = {
                 'id': user_id,
                 'username': username,
                 'password_hash': password,  # 실제로는 해시화해야 함
                 'created_at': datetime.now().isoformat()
-            }).execute()
+            }
+            
+            # 소속이 선택된 경우 추가
+            if department_id:
+                user_data['department_id'] = department_id
+            
+            result = supabase.table('users').insert(user_data).execute()
             
             if result.data:
                 return jsonify({'success': True, 'message': '회원가입 성공!', 'user_id': user_id})
@@ -122,7 +129,17 @@ def register():
             logger.error(f"회원가입 에러: {e}")
             return jsonify({'error': f'회원가입 중 오류가 발생했습니다: {str(e)}'}), 500
     
-    return render_template('register.html')
+    # GET 요청 시 소속 목록 조회
+    try:
+        if supabase:
+            departments = supabase.table('departments').select('*').execute().data
+        else:
+            departments = []
+    except Exception as e:
+        logger.error(f"소속 목록 조회 에러: {e}")
+        departments = []
+    
+    return render_template('register.html', departments=departments)
 
 @app.route('/dashboard')
 def dashboard():
