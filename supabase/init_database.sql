@@ -3,19 +3,10 @@
 -- ========================================
 
 -- 기존 테이블 및 정책 삭제 (있다면)
+-- 테이블을 먼저 삭제하면 CASCADE로 관련 정책도 함께 삭제됨
 DROP TABLE IF EXISTS work_logs CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS departments CASCADE;
-
--- 기존 RLS 정책 삭제
-DROP POLICY IF EXISTS "departments_read_policy" ON departments;
-DROP POLICY IF EXISTS "users_read_policy" ON users;
-DROP POLICY IF EXISTS "users_insert_policy" ON users;
-DROP POLICY IF EXISTS "users_update_policy" ON users;
-DROP POLICY IF EXISTS "work_logs_read_policy" ON work_logs;
-DROP POLICY IF EXISTS "work_logs_insert_policy" ON work_logs;
-DROP POLICY IF EXISTS "work_logs_update_policy" ON work_logs;
-DROP POLICY IF EXISTS "work_logs_delete_policy" ON work_logs;
 
 -- 기존 함수 및 트리거 삭제
 DROP TRIGGER IF EXISTS update_users_updated_at ON users;
