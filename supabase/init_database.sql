@@ -2,10 +2,28 @@
 -- WorkTracker 데이터베이스 초기화
 -- ========================================
 
--- 기존 테이블 삭제 (있다면)
+-- 기존 테이블 및 정책 삭제 (있다면)
 DROP TABLE IF EXISTS work_logs CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS departments CASCADE;
+
+-- 기존 RLS 정책 삭제
+DROP POLICY IF EXISTS "departments_read_policy" ON departments;
+DROP POLICY IF EXISTS "users_read_policy" ON users;
+DROP POLICY IF EXISTS "users_insert_policy" ON users;
+DROP POLICY IF EXISTS "users_update_policy" ON users;
+DROP POLICY IF EXISTS "work_logs_read_policy" ON work_logs;
+DROP POLICY IF EXISTS "work_logs_insert_policy" ON work_logs;
+DROP POLICY IF EXISTS "work_logs_update_policy" ON work_logs;
+DROP POLICY IF EXISTS "work_logs_delete_policy" ON work_logs;
+
+-- 기존 함수 및 트리거 삭제
+DROP TRIGGER IF EXISTS update_users_updated_at ON users;
+DROP TRIGGER IF EXISTS update_work_logs_updated_at ON work_logs;
+DROP FUNCTION IF EXISTS update_updated_at_column();
+
+-- 기존 뷰 삭제
+DROP VIEW IF EXISTS user_summary;
 
 -- departments 테이블 생성
 CREATE TABLE departments (
