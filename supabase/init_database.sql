@@ -60,49 +60,33 @@ ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE work_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE departments ENABLE ROW LEVEL SECURITY;
 
--- RLS 정책 생성
+-- RLS 정책 생성 (세션 기반 인증용)
 -- departments: 모든 사용자가 읽기 가능
 CREATE POLICY "departments_read_policy" ON departments
     FOR SELECT USING (true);
 
--- users: 자신의 정보만 읽기/수정 가능, 관리자는 모든 사용자 관리 가능
-CREATE POLICY "users_read_policy" ON users
-    FOR SELECT USING (auth.uid() = id OR role = 'admin');
-
+-- users: 회원가입 허용, 관리자는 모든 사용자 관리 가능
 CREATE POLICY "users_insert_policy" ON users
     FOR INSERT WITH CHECK (true);
 
-CREATE POLICY "users_update_policy" ON users
-    FOR UPDATE USING (auth.uid() = id OR role = 'admin');
+CREATE POLICY "users_read_policy" ON users
+    FOR SELECT USING (true);
 
--- work_logs: 자신의 로그만 읽기/수정 가능, 관리자는 모든 로그 관리 가능
+CREATE POLICY "users_update_policy" ON users
+    FOR UPDATE USING (true);
+
+-- work_logs: 모든 사용자가 읽기/쓰기 가능 (애플리케이션 레벨에서 권한 제어)
 CREATE POLICY "work_logs_read_policy" ON work_logs
-    FOR SELECT USING (
-        user_id IN (
-            SELECT id FROM users WHERE id = auth.uid() OR role = 'admin'
-        )
-    );
+    FOR SELECT USING (true);
 
 CREATE POLICY "work_logs_insert_policy" ON work_logs
-    FOR INSERT WITH CHECK (
-        user_id IN (
-            SELECT id FROM users WHERE id = auth.uid() OR role = 'admin'
-        )
-    );
+    FOR INSERT WITH CHECK (true);
 
 CREATE POLICY "work_logs_update_policy" ON work_logs
-    FOR UPDATE USING (
-        user_id IN (
-            SELECT id FROM users WHERE id = auth.uid() OR role = 'admin'
-        )
-    );
+    FOR UPDATE USING (true);
 
 CREATE POLICY "work_logs_delete_policy" ON work_logs
-    FOR DELETE USING (
-        user_id IN (
-            SELECT id FROM users WHERE id = auth.uid() OR role = 'admin'
-        )
-    );
+    FOR DELETE USING (true);
 
 -- 함수 생성: updated_at 자동 업데이트
 CREATE OR REPLACE FUNCTION update_updated_at_column()
