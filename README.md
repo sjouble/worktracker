@@ -34,8 +34,7 @@ WorkTracker는 사용자별 업무를 추적하고 관리하는 웹 애플리케
 ### 1. Supabase 설정
 
 1. [Supabase](https://supabase.com)에서 새 프로젝트 생성
-2. SQL 편집기에서 `supabase/init_database.sql` 실행
-3. RLS 정책 설정 확인 (`supabase/rls_policies.sql`)
+2. SQL 편집기에서 `supabase/init_database.sql` 실행 (RLS 정책 포함)
 
 ### 2. Render 배포
 
@@ -170,8 +169,7 @@ worktracker/
 ├── Procfile             # Heroku/Render 프로세스 설정
 ├── .env.example         # 환경 변수 예시
 ├── supabase/
-│   ├── init_database.sql # 데이터베이스 초기화
-│   └── rls_policies.sql  # RLS 정책
+│   └── init_database.sql # 데이터베이스 초기화 (RLS 정책 포함)
 ├── templates/           # HTML 템플릿
 ├── static/             # 정적 파일 (CSS, JS)
 └── docs/              # 문서

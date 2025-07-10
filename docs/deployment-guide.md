@@ -14,8 +14,7 @@
 ### 2. 데이터베이스 초기화
 
 1. Supabase 대시보드에서 SQL Editor 열기
-2. `supabase/init_database.sql` 파일의 내용을 복사하여 실행
-3. `supabase/rls_policies.sql` 파일의 내용도 실행
+2. `supabase/init_database.sql` 파일의 내용을 복사하여 실행 (RLS 정책 포함)
 
 ## Render 배포
 
