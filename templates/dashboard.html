@@ -152,27 +152,11 @@
         <!-- 완료된 업무 목록 -->
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">완료된 업무 목록</h5>
+                <h5 class="mb-0" id="completedTasksTitle">완료된 업무 목록</h5>
             </div>
             <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>날짜</th>
-                                <th>업무 유형</th>
-                                <th>업무 내용</th>
-                                <th>시작 시간</th>
-                                <th>종료 시간</th>
-                                <th>소요 시간</th>
-                                <th>완료 내용</th>
-                                <th>작업</th>
-                            </tr>
-                        </thead>
-                        <tbody id="completedTasks">
-                            <!-- 완료된 업무가 여기에 동적으로 로드됩니다 -->
-                        </tbody>
-                    </table>
+                <div id="completedTasksContainer">
+                    <!-- 완료된 업무가 여기에 동적으로 로드됩니다 -->
                 </div>
             </div>
         </div>
@@ -379,20 +363,30 @@ async function loadTasks() {
     try {
         const filterType = document.getElementById('filterType').value;
         let url = '/api/tasks';
+        let titleText = '완료된 업무 목록';
         
         // 필터 파라미터 추가
         if (filterType === 'date') {
             const filterDate = document.getElementById('filterDate').value;
             if (filterDate) {
                 url += `?date=${filterDate}`;
+                titleText = `${filterDate} 완료된 업무 목록`;
             }
         } else if (filterType === 'period') {
             const startDate = document.getElementById('filterStartDate').value;
             const endDate = document.getElementById('filterEndDate').value;
             if (startDate && endDate) {
                 url += `?start_date=${startDate}&end_date=${endDate}`;
+                titleText = `${startDate} ~ ${endDate} 완료된 업무 목록`;
             }
+        } else {
+            // 오늘 조회
+            const today = new Date().toISOString().split('T')[0];
+            titleText = '오늘 완료된 업무 목록';
         }
+        
+        // 제목 업데이트
+        document.getElementById('completedTasksTitle').textContent = titleText;
         
         const response = await fetch(url);
         const tasks = await response.json();
@@ -430,34 +424,43 @@ async function loadTasks() {
         
         // 완료된 업무
         const completedTasks = tasks.filter(task => task.status === '완료');
-        const completedTasksTbody = document.getElementById('completedTasks');
+        const completedTasksContainer = document.getElementById('completedTasksContainer');
         
         if (completedTasks.length === 0) {
-            completedTasksTbody.innerHTML = '<tr><td colspan="8" class="text-center empty-state"><i class="fas fa-check-circle"></i><p>완료된 업무가 없습니다.</p></td></tr>';
+            completedTasksContainer.innerHTML = '<div class="empty-state"><i class="fas fa-check-circle"></i><p>완료된 업무가 없습니다.</p></div>';
         } else {
             let completedTasksHTML = '';
             completedTasks.forEach(task => {
                 const duration = calculateDuration(task.start_time, task.end_time);
                 
+                // 오늘 조회 시에는 날짜 정보 숨기기
+                const dateInfo = filterType === 'today' ? '' : `<small class="text-muted">날짜: ${task.work_date}</small>`;
+                
                 completedTasksHTML += `
-                    <tr class="completed-task-row">
-                        <td>${task.work_date}</td>
-                        <td>${task.task_type}</td>
-                        <td>${task.description || '내용 없음'}</td>
-                        <td>${task.start_time}</td>
-                        <td>${task.end_time}</td>
-                        <td class="duration-cell">${duration}</td>
-                        <td>${task.complete_description || '-'}</td>
-                        <td>
-                            <div class="d-flex gap-1">
-                                <button class="btn btn-sm btn-outline-primary" onclick="editCompletedTask(${task.id})">수정</button>
-                                <button class="btn btn-sm btn-outline-danger" onclick="deleteTask(${task.id})">삭제</button>
+                    <div class="card mb-2 completed-task-card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <h6 class="card-title mb-0 me-3">${task.task_type}</h6>
+                                        <span class="badge bg-success">완료</span>
+                                    </div>
+                                    <p class="card-text mb-2">${task.description || '내용 없음'}</p>
+                                    <div class="task-time-info">
+                                        ${dateInfo}
+                                        <small class="text-muted d-block">시작: ${task.start_time} | 종료: ${task.end_time || 'N/A'}</small>
+                                        ${task.complete_description ? `<small class="text-muted d-block">완료 내용: ${task.complete_description}</small>` : ''}
+                                    </div>
+                                </div>
+                                <div class="ms-3">
+                                    <button class="btn btn-sm btn-outline-primary" onclick="editCompletedTask(${task.id})">수정</button>
+                                </div>
                             </div>
-                        </td>
-                    </tr>
+                        </div>
+                    </div>
                 `;
             });
-            completedTasksTbody.innerHTML = completedTasksHTML;
+            completedTasksContainer.innerHTML = completedTasksHTML;
         }
     } catch (error) {
         console.error('업무 목록 불러오기 실패:', error);
