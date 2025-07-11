@@ -110,6 +110,66 @@ body {
     padding: 0.3em 0.6em;
 }
 
+/* 모바일 반응형 스타일 */
+@media (max-width: 767.98px) {
+    .completed-task-card .card-body,
+    .current-task-card .card-body {
+        padding: 0.75rem;
+    }
+    
+    .completed-task-card .card-title,
+    .current-task-card .card-title {
+        font-size: 1rem;
+    }
+    
+    .completed-task-card .card-text,
+    .current-task-card .card-text {
+        font-size: 0.9rem;
+    }
+    
+    .task-time-info small {
+        font-size: 0.8rem;
+    }
+    
+    .btn-sm {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.9rem;
+    }
+    
+    .badge {
+        font-size: 0.7em;
+        padding: 0.25em 0.5em;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .container {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+    
+    .card {
+        margin-bottom: 1rem;
+    }
+    
+    .card-header {
+        padding: 0.75rem;
+    }
+    
+    .card-body {
+        padding: 0.75rem;
+    }
+    
+    .form-label {
+        font-size: 0.9rem;
+    }
+    
+    .form-control,
+    .form-select {
+        font-size: 0.9rem;
+    }
+}
+
 .completed-task-row {
     transition: background-color 0.2s ease;
 }

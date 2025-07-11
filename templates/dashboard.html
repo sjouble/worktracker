@@ -404,15 +404,19 @@ async function loadTasks() {
                 currentTasksHTML += `
                     <div class="card mb-2 current-task-card">
                         <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="card-title">${task.task_type} <span class="badge status-badge progress">진행중</span></h6>
-                                    <p class="card-text">${task.description || '내용 없음'}</p>
-                                    <small class="text-muted">날짜: ${task.work_date} | 시작 시간: ${startTime}</small>
+                            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start">
+                                <div class="flex-grow-1 mb-2 mb-md-0">
+                                    <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center mb-2">
+                                        <h6 class="card-title mb-0 me-3">${task.task_type}</h6>
+                                        <span class="badge status-badge progress mt-1 mt-sm-0">진행중</span>
+                                    </div>
+                                    <p class="card-text mb-2">${task.description || '내용 없음'}</p>
+                                    <small class="text-muted d-block d-sm-inline-block me-3">날짜: ${task.work_date}</small>
+                                    <small class="text-muted d-block d-sm-inline-block">시작 시간: ${startTime}</small>
                                 </div>
-                                <div class="d-flex gap-2">
-                                    <button class="btn btn-outline-primary btn-sm" onclick="editCompletedTask(${task.id})">수정</button>
-                                    <button class="btn btn-success" onclick="showCompleteForm(${task.id})">완료</button>
+                                <div class="d-flex flex-column flex-sm-row gap-2 ms-md-3">
+                                    <button class="btn btn-outline-primary btn-sm w-100 w-sm-auto" onclick="editCompletedTask(${task.id})">수정</button>
+                                    <button class="btn btn-success btn-sm w-100 w-sm-auto" onclick="showCompleteForm(${task.id})">완료</button>
                                 </div>
                             </div>
                         </div>
@@ -439,21 +443,22 @@ async function loadTasks() {
                 completedTasksHTML += `
                     <div class="card mb-2 completed-task-card">
                         <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div class="flex-grow-1">
-                                    <div class="d-flex align-items-center mb-2">
+                            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start">
+                                <div class="flex-grow-1 mb-2 mb-md-0">
+                                    <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center mb-2">
                                         <h6 class="card-title mb-0 me-3">${task.task_type}</h6>
-                                        <span class="badge bg-success">완료</span>
+                                        <span class="badge bg-success mt-1 mt-sm-0">완료</span>
                                     </div>
                                     <p class="card-text mb-2">${task.description || '내용 없음'}</p>
                                     <div class="task-time-info">
                                         ${dateInfo}
-                                        <small class="text-muted d-block">시작: ${task.start_time} | 종료: ${task.end_time || 'N/A'}</small>
-                                        ${task.complete_description ? `<small class="text-muted d-block">완료 내용: ${task.complete_description}</small>` : ''}
+                                        <small class="text-muted d-block d-sm-inline-block me-3">시작: ${task.start_time}</small>
+                                        <small class="text-muted d-block d-sm-inline-block">종료: ${task.end_time || 'N/A'}</small>
+                                        ${task.complete_description ? `<small class="text-muted d-block mt-1">완료 내용: ${task.complete_description}</small>` : ''}
                                     </div>
                                 </div>
-                                <div class="ms-3">
-                                    <button class="btn btn-sm btn-outline-primary" onclick="editCompletedTask(${task.id})">수정</button>
+                                <div class="ms-md-3">
+                                    <button class="btn btn-sm btn-outline-primary w-100 w-md-auto" onclick="editCompletedTask(${task.id})">수정</button>
                                 </div>
                             </div>
                         </div>
