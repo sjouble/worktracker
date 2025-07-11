@@ -266,13 +266,14 @@
 <script>
 // 페이지 로드 시 초기화
 document.addEventListener('DOMContentLoaded', function() {
-    // 오늘 날짜를 기본값으로 설정
-    const today = new Date().toISOString().split('T')[0];
+    // 오늘 날짜를 기본값으로 설정 (한국 시간 기준)
+    const now = new Date();
+    const koreanTime = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
+    const today = koreanTime.toISOString().split('T')[0];
     document.getElementById('workDate').value = today;
     
-    // 현재 시간을 기본값으로 설정 (24시간 형식)
-    const now = new Date();
-    const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+    // 현재 시간을 기본값으로 설정 (24시간 형식, 한국 시간 기준)
+    const currentTime = koreanTime.getHours().toString().padStart(2, '0') + ':' + koreanTime.getMinutes().toString().padStart(2, '0');
     document.getElementById('startTime').value = currentTime;
     
     // 조회 필터 이벤트 리스너
@@ -334,11 +335,12 @@ document.getElementById('taskForm').addEventListener('submit', async function(e)
         
         if (response.ok) {
             document.getElementById('taskForm').reset();
-            // 기본값 다시 설정
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('workDate').value = today;
+            // 기본값 다시 설정 (한국 시간 기준)
             const now = new Date();
-            const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+            const koreanTime = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
+            const today = koreanTime.toISOString().split('T')[0];
+            document.getElementById('workDate').value = today;
+            const currentTime = koreanTime.getHours().toString().padStart(2, '0') + ':' + koreanTime.getMinutes().toString().padStart(2, '0');
             document.getElementById('startTime').value = currentTime;
             
             loadTasks();
@@ -412,8 +414,10 @@ async function loadTasks() {
                 titleText = `${startDate} ~ ${endDate} 완료된 업무 목록`;
             }
         } else {
-            // 오늘 조회
-            const today = new Date().toISOString().split('T')[0];
+            // 오늘 조회 (한국 시간 기준)
+            const now = new Date();
+            const koreanTime = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
+            const today = koreanTime.toISOString().split('T')[0];
             titleText = '오늘 완료된 업무 목록';
         }
         
@@ -436,13 +440,13 @@ async function loadTasks() {
                 currentTasksHTML += `
                     <div class="card mb-2 current-task-card">
                         <div class="card-body">
-                            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start">
-                                <div class="flex-grow-1 mb-2 mb-md-0">
-                                    <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center mb-2">
+                            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center">
+                                <div class="flex-grow-1 mb-2 mb-md-0 text-center text-md-start">
+                                    <div class="d-flex flex-column flex-sm-row align-items-center justify-content-center justify-content-sm-start mb-2">
                                         <h6 class="card-title mb-0 me-3">${task.task_type}</h6>
                                         <span class="badge status-badge progress mt-1 mt-sm-0">진행중</span>
                                     </div>
-                                    <p class="card-text mb-2">${task.description || '내용 없음'}</p>
+                                    <p class="card-text mb-2 text-center text-md-start">${task.description || '내용 없음'}</p>
                                     <small class="text-muted d-block d-sm-inline-block me-3">날짜: ${task.work_date}</small>
                                     <small class="text-muted d-block d-sm-inline-block">시작 시간: ${startTime}</small>
                                 </div>
@@ -475,14 +479,14 @@ async function loadTasks() {
                 completedTasksHTML += `
                     <div class="card mb-2 completed-task-card">
                         <div class="card-body">
-                            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start">
-                                <div class="flex-grow-1 mb-2 mb-md-0">
-                                    <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center mb-2">
+                            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center">
+                                <div class="flex-grow-1 mb-2 mb-md-0 text-center text-md-start">
+                                    <div class="d-flex flex-column flex-sm-row align-items-center justify-content-center justify-content-sm-start mb-2">
                                         <h6 class="card-title mb-0 me-3">${task.task_type}</h6>
                                         <span class="badge bg-success mt-1 mt-sm-0">완료</span>
                                     </div>
-                                    <p class="card-text mb-2">${task.description || '내용 없음'}</p>
-                                    <div class="task-time-info">
+                                    <p class="card-text mb-2 text-center text-md-start">${task.description || '내용 없음'}</p>
+                                    <div class="task-time-info text-center text-md-start">
                                         ${dateInfo}
                                         <small class="text-muted d-block d-sm-inline-block me-3">시작: ${task.start_time}</small>
                                         <small class="text-muted d-block d-sm-inline-block">종료: ${task.end_time || 'N/A'}</small>
@@ -508,9 +512,10 @@ async function loadTasks() {
 function showCompleteForm(taskId) {
     document.getElementById('completeTaskId').value = taskId;
     
-    // 현재 시간을 기본값으로 설정
+    // 현재 시간을 기본값으로 설정 (한국 시간 기준)
     const now = new Date();
-    const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+    const koreanTime = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
+    const currentTime = koreanTime.getHours().toString().padStart(2, '0') + ':' + koreanTime.getMinutes().toString().padStart(2, '0');
     document.getElementById('endTime').value = currentTime;
     
     document.getElementById('completeTaskCard').style.display = 'block';

@@ -157,14 +157,14 @@
                     <table class="table table-striped" id="tasksTable">
                         <thead>
                             <tr>
-                                <th>소속</th>
-                                <th>작업자</th>
-                                <th>업무 유형</th>
-                                <th>상태</th>
-                                <th>시작 시간</th>
-                                <th>종료 시간</th>
-                                <th>작업일자</th>
-                                <th>관리</th>
+                                <th class="text-center">소속</th>
+                                <th class="text-center">작업자</th>
+                                <th class="text-center">업무 유형</th>
+                                <th class="text-center">상태</th>
+                                <th class="text-center">시작 시간</th>
+                                <th class="text-center">종료 시간</th>
+                                <th class="text-center">작업일자</th>
+                                <th class="text-center">관리</th>
                             </tr>
                         </thead>
                         <tbody id="tasksTableBody">
@@ -203,6 +203,106 @@
                         <div id="timeStats"></div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 업무 수정 모달 -->
+<div class="modal fade" id="editTaskModal" tabindex="-1" aria-labelledby="editTaskModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editTaskModalLabel">업무 수정</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editTaskForm">
+                    <input type="hidden" id="editTaskId">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editWorkDate" class="form-label">업무 날짜</label>
+                                <input type="date" class="form-control date-input" id="editWorkDate" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editTaskType" class="form-label">업무 유형</label>
+                                <select class="form-select task-type-select" id="editTaskType" required>
+                                    <option value="">업무 유형 선택</option>
+                                    <option value="인출">인출</option>
+                                    <option value="보충">보충</option>
+                                    <option value="입고지원">입고지원</option>
+                                    <option value="미출대응">미출대응</option>
+                                    <option value="단내리기">단내리기</option>
+                                    <option value="이고">이고</option>
+                                    <option value="과출">과출</option>
+                                    <option value="파손">파손</option>
+                                    <option value="기타">기타</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editStartTime" class="form-label">시작 시간</label>
+                                <input type="time" class="form-control time-input" id="editStartTime" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="editEndTime" class="form-label">종료 시간</label>
+                                <input type="time" class="form-control time-input" id="editEndTime">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editDescription" class="form-label">업무 내용</label>
+                        <input type="text" class="form-control" id="editDescription" placeholder="업무 내용을 입력하세요">
+                    </div>
+                    <div class="mb-3">
+                        <label for="editCompleteDescription" class="form-label">완료 내용</label>
+                        <input type="text" class="form-control" id="editCompleteDescription" placeholder="완료된 업무 내용을 입력하세요">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <button type="button" class="btn btn-primary" onclick="saveTaskEdit()">수정</button>
+                <button type="button" class="btn btn-danger" onclick="deleteTaskFromModal()">삭제</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 삭제 확인 모달 -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteConfirmModalLabel">
+                    <i class="fas fa-exclamation-triangle text-danger me-2"></i>업무 삭제 확인
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <h6 class="alert-heading">⚠️ 주의사항</h6>
+                    <p class="mb-2">정말로 이 업무를 삭제하시겠습니까?</p>
+                    <ul class="mb-0">
+                        <li>삭제된 업무는 복구할 수 없습니다.</li>
+                        <li>모든 업무 기록이 영구적으로 삭제됩니다.</li>
+                    </ul>
+                </div>
+                <p class="text-muted small">계속하시려면 아래 "삭제" 버튼을 클릭하세요.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDeleteTask()">
+                    <i class="fas fa-trash me-1"></i>삭제
+                </button>
             </div>
         </div>
     </div>
@@ -276,20 +376,20 @@ function renderTasks() {
     filteredTasks.forEach(task => {
         const row = `
             <tr>
-                <td>${task.users?.departments?.name || '미지정'}</td>
-                <td>${task.users?.username || 'Unknown'}</td>
-                <td>${task.task_type}</td>
-                <td>
+                <td class="text-center">${task.users?.departments?.name || '미지정'}</td>
+                <td class="text-center">${task.users?.username || 'Unknown'}</td>
+                <td class="text-center">${task.task_type}</td>
+                <td class="text-center">
                     <span class="badge ${task.status === '완료' ? 'bg-success' : 'bg-warning'}">
                         ${task.status}
                     </span>
                 </td>
-                <td>${task.start_time}</td>
-                <td>${task.end_time || '-'}</td>
-                <td>${task.work_date || '-'}</td>
-                <td>
-                    <button class="btn btn-sm btn-outline-primary">수정</button>
-                    <button class="btn btn-sm btn-outline-danger">삭제</button>
+                <td class="text-center">${task.start_time}</td>
+                <td class="text-center">${task.end_time || '-'}</td>
+                <td class="text-center">${task.work_date || '-'}</td>
+                <td class="text-center">
+                    <button class="btn btn-sm btn-outline-primary" onclick="editTask(${task.id})">수정</button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteTask(${task.id})">삭제</button>
                 </td>
             </tr>
         `;
@@ -434,6 +534,133 @@ async function addTestData() {
     } catch (error) {
         console.error('테스트 데이터 추가 실패:', error);
         alert('테스트 데이터 추가 중 오류가 발생했습니다.');
+    }
+}
+
+// 업무 수정 (모달)
+async function editTask(taskId) {
+    try {
+        const response = await fetch(`/api/tasks/${taskId}`);
+        if (response.ok) {
+            const task = await response.json();
+            
+            // 모달 폼에 데이터 채우기
+            document.getElementById('editTaskId').value = task.id;
+            document.getElementById('editWorkDate').value = task.work_date;
+            document.getElementById('editStartTime').value = task.start_time;
+            document.getElementById('editEndTime').value = task.end_time || '';
+            document.getElementById('editTaskType').value = task.task_type;
+            document.getElementById('editDescription').value = task.description || '';
+            document.getElementById('editCompleteDescription').value = task.complete_description || '';
+            
+            // 모달 표시
+            const modal = new bootstrap.Modal(document.getElementById('editTaskModal'));
+            modal.show();
+        } else {
+            alert('업무 정보를 불러오는데 실패했습니다.');
+        }
+    } catch (error) {
+        alert('업무 정보를 불러오는 중 오류가 발생했습니다.');
+    }
+}
+
+// 업무 수정 저장
+async function saveTaskEdit() {
+    const taskId = document.getElementById('editTaskId').value;
+    const workDate = document.getElementById('editWorkDate').value;
+    const startTime = document.getElementById('editStartTime').value;
+    const endTime = document.getElementById('editEndTime').value;
+    const taskType = document.getElementById('editTaskType').value;
+    const description = document.getElementById('editDescription').value;
+    const completeDescription = document.getElementById('editCompleteDescription').value;
+    
+    if (!workDate || !startTime || !taskType) {
+        alert('필수 항목을 모두 입력해주세요.');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/tasks/${taskId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                work_date: workDate,
+                start_time: startTime,
+                end_time: endTime,
+                task_type: taskType,
+                description: description,
+                complete_description: completeDescription
+            })
+        });
+        
+        if (response.ok) {
+            // 모달 닫기
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editTaskModal'));
+            modal.hide();
+            
+            loadTasks();
+            loadStatistics();
+            alert('업무가 수정되었습니다.');
+        } else {
+            const error = await response.json();
+            alert(error.error || '업무 수정에 실패했습니다.');
+        }
+    } catch (error) {
+        alert('업무 수정 중 오류가 발생했습니다.');
+    }
+}
+
+// 업무 삭제
+async function deleteTask(taskId) {
+    // 삭제할 업무 ID 저장
+    window.deleteTaskId = taskId;
+    
+    // 삭제 확인 모달 표시
+    const deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+    deleteModal.show();
+}
+
+// 모달에서 업무 삭제
+async function deleteTaskFromModal() {
+    const taskId = document.getElementById('editTaskId').value;
+    
+    // 삭제할 업무 ID 저장
+    window.deleteTaskId = taskId;
+    
+    // 수정 모달 닫기
+    const editModal = bootstrap.Modal.getInstance(document.getElementById('editTaskModal'));
+    editModal.hide();
+    
+    // 삭제 확인 모달 표시
+    const deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+    deleteModal.show();
+}
+
+// 삭제 확인 후 실제 삭제 실행
+async function confirmDeleteTask() {
+    const taskId = window.deleteTaskId;
+    
+    try {
+        const response = await fetch(`/api/tasks/${taskId}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            // 삭제 확인 모달 닫기
+            const deleteModal = bootstrap.Modal.getInstance(document.getElementById('deleteConfirmModal'));
+            deleteModal.hide();
+            
+            loadTasks();
+            loadStatistics();
+            alert('업무가 삭제되었습니다.');
+        } else {
+            const error = await response.json();
+            alert(error.error || '업무 삭제에 실패했습니다.');
+        }
+    } catch (error) {
+        alert('업무 삭제 중 오류가 발생했습니다.');
     }
 }
 

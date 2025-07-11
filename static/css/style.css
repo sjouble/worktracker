@@ -244,10 +244,10 @@ body {
     text-align: center;
 }
 
-.table tbody td:first-child,
-.table tbody td:nth-child(2),
-.table tbody td:nth-child(3) {
-    text-align: left;
+/* 모든 테이블 셀을 중앙 정렬로 통일 */
+.table tbody td,
+.table thead th {
+    text-align: center;
 }
 
 .duration-cell {

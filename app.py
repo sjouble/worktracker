@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for, s
 from supabase.client import create_client, Client
 import os
 from dotenv import load_dotenv
-from datetime import datetime, date
+from datetime import datetime, date, timezone, timedelta
 import uuid
 from typing import Optional
 import logging
@@ -10,6 +10,17 @@ import logging
 # 로깅 설정
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# 한국 시간대 (KST = UTC+9)
+KST = timezone(timedelta(hours=9))
+
+def get_korean_date():
+    """한국 시간 기준으로 오늘 날짜를 반환"""
+    return datetime.now(KST).date()
+
+def get_korean_datetime():
+    """한국 시간 기준으로 현재 시간을 반환"""
+    return datetime.now(KST)
 
 # 환경 변수 로드 (로컬 개발용)
 if os.path.exists('.env'):
@@ -344,13 +355,17 @@ def get_task(task_id):
         return jsonify({'error': '로그인이 필요합니다.'}), 401
     
     user_id = session['user']['id']
+    username = session['user']['username']
     
     if not supabase:
         return jsonify({'error': '데이터베이스 연결에 문제가 있습니다.'}), 500
     
     try:
-        # 업무 존재 및 권한 확인
-        task_result = supabase.table('work_logs').select('*').eq('id', task_id).eq('user_id', user_id).execute()
+        # 관리자는 모든 업무 조회 가능, 일반 사용자는 자신의 업무만
+        if username == 'admin':
+            task_result = supabase.table('work_logs').select('*').eq('id', task_id).execute()
+        else:
+            task_result = supabase.table('work_logs').select('*').eq('id', task_id).eq('user_id', user_id).execute()
         
         if not task_result.data:
             return jsonify({'error': '업무를 찾을 수 없거나 권한이 없습니다.'}), 404
@@ -367,6 +382,7 @@ def update_task(task_id):
         return jsonify({'error': '로그인이 필요합니다.'}), 401
     
     user_id = session['user']['id']
+    username = session['user']['username']
     
     if not supabase:
         return jsonify({'error': '데이터베이스 연결에 문제가 있습니다.'}), 500
@@ -380,8 +396,11 @@ def update_task(task_id):
             if not data.get(field):
                 return jsonify({'error': f'{field} 필드가 필요합니다.'}), 400
         
-        # 업무 존재 및 권한 확인
-        task_result = supabase.table('work_logs').select('*').eq('id', task_id).eq('user_id', user_id).execute()
+        # 관리자는 모든 업무 수정 가능, 일반 사용자는 자신의 업무만
+        if username == 'admin':
+            task_result = supabase.table('work_logs').select('*').eq('id', task_id).execute()
+        else:
+            task_result = supabase.table('work_logs').select('*').eq('id', task_id).eq('user_id', user_id).execute()
         
         if not task_result.data:
             return jsonify({'error': '업무를 찾을 수 없거나 권한이 없습니다.'}), 404
@@ -392,7 +411,7 @@ def update_task(task_id):
             'start_time': data['start_time'],
             'task_type': data['task_type'],
             'description': data.get('description', ''),
-            'updated_at': datetime.now().isoformat()
+            'updated_at': get_korean_datetime().isoformat()
         }
         
         # 종료 시간이 있으면 추가
@@ -421,13 +440,17 @@ def delete_task(task_id):
         return jsonify({'error': '로그인이 필요합니다.'}), 401
     
     user_id = session['user']['id']
+    username = session['user']['username']
     
     if not supabase:
         return jsonify({'error': '데이터베이스 연결에 문제가 있습니다.'}), 500
     
     try:
-        # 업무 존재 및 권한 확인
-        task_result = supabase.table('work_logs').select('*').eq('id', task_id).eq('user_id', user_id).execute()
+        # 관리자는 모든 업무 삭제 가능, 일반 사용자는 자신의 업무만
+        if username == 'admin':
+            task_result = supabase.table('work_logs').select('*').eq('id', task_id).execute()
+        else:
+            task_result = supabase.table('work_logs').select('*').eq('id', task_id).eq('user_id', user_id).execute()
         
         if not task_result.data:
             return jsonify({'error': '업무를 찾을 수 없거나 권한이 없습니다.'}), 404
@@ -880,8 +903,8 @@ def get_admin_statistics():
         return jsonify({'error': '데이터베이스 연결에 문제가 있습니다.'}), 500
     
     try:
-        today = date.today().isoformat()
-        logger.info(f"오늘 날짜: {today}")
+        today = get_korean_date().isoformat()
+        logger.info(f"오늘 날짜 (KST): {today}")
         
         # 총 작업자 수 (회원가입된 모든 사용자)
         total_users = supabase.table('users').select('id').execute()
@@ -935,7 +958,8 @@ def add_test_data():
         return jsonify({'error': '데이터베이스 연결에 문제가 있습니다.'}), 500
     
     try:
-        today = date.today().isoformat()
+        today = get_korean_date().isoformat()
+        logger.info(f"테스트 데이터 추가 - 오늘 날짜 (KST): {today}")
         
         # 관리자 사용자 ID 가져오기
         admin_user = supabase.table('users').select('id').eq('username', 'admin').execute()
@@ -977,6 +1001,7 @@ def add_test_data():
         for task in test_tasks:
             supabase.table('work_logs').insert(task).execute()
         
+        logger.info(f"테스트 데이터 {len(test_tasks)}개 추가 완료")
         return jsonify({'message': '테스트 데이터가 추가되었습니다.', 'added_tasks': len(test_tasks)})
         
     except Exception as e:
