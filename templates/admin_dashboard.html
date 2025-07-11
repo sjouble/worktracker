@@ -13,6 +13,7 @@
             <div class="d-flex gap-2">
                 <a href="{{ url_for('admin_users') }}" class="btn btn-outline-primary">사용자 관리</a>
                 <a href="{{ url_for('admin_departments') }}" class="btn btn-outline-secondary">소속 관리</a>
+                <button type="button" class="btn btn-outline-warning" onclick="addTestData()">테스트 데이터 추가</button>
                 <a href="{{ url_for('logout') }}" class="btn btn-outline-danger">로그아웃</a>
             </div>
         </div>
@@ -254,10 +255,14 @@ async function loadStatistics() {
         const response = await fetch('/api/admin/statistics');
         const statistics = await response.json();
         
+        console.log('받은 통계 데이터:', statistics);
+        
         document.getElementById('totalWorkers').textContent = statistics.total_workers;
         document.getElementById('todayParticipants').textContent = statistics.today_participants;
         document.getElementById('ongoingTasks').textContent = statistics.ongoing_tasks;
         document.getElementById('totalTasks').textContent = statistics.total_tasks;
+        
+        console.log('통계 업데이트 완료');
     } catch (error) {
         console.error('통계 불러오기 실패:', error);
     }
@@ -400,6 +405,36 @@ function showStatistics() {
         .join('');
     
     new bootstrap.Modal(document.getElementById('statisticsModal')).show();
+}
+
+// 테스트 데이터 추가
+async function addTestData() {
+    if (!confirm('오늘 날짜의 테스트 데이터를 추가하시겠습니까?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/admin/add-test-data', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            alert(`테스트 데이터가 추가되었습니다. (${result.added_tasks}개 업무)`);
+            // 데이터 새로고침
+            loadTasks();
+            loadStatistics();
+        } else {
+            alert(result.error || '테스트 데이터 추가에 실패했습니다.');
+        }
+    } catch (error) {
+        console.error('테스트 데이터 추가 실패:', error);
+        alert('테스트 데이터 추가 중 오류가 발생했습니다.');
+    }
 }
 
 

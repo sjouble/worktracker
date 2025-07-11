@@ -881,20 +881,29 @@ def get_admin_statistics():
     
     try:
         today = date.today().isoformat()
+        logger.info(f"오늘 날짜: {today}")
         
         # 총 작업자 수 (회원가입된 모든 사용자)
         total_users = supabase.table('users').select('id').execute()
         total_workers = len(total_users.data)
+        logger.info(f"총 작업자 수: {total_workers}")
         
         # 오늘 작업 참여자 수 (오늘 업무를 등록한 사용자)
         today_workers = supabase.table('work_logs').select('user_id').eq('work_date', today).execute()
         today_participants = len(set(task['user_id'] for task in today_workers.data))
+        logger.info(f"오늘 작업 참여자 수: {today_participants}")
         
         # 오늘 업무 통계 (오늘 날짜 기준)
         today_tasks = supabase.table('work_logs').select('status').eq('work_date', today).execute()
+        logger.info(f"오늘 업무 데이터: {today_tasks.data}")
+        
         today_completed_tasks = len([task for task in today_tasks.data if task['status'] == '완료'])
         today_ongoing_tasks = len([task for task in today_tasks.data if task['status'] == '진행중'])
         today_total_tasks = len(today_tasks.data)
+        
+        logger.info(f"오늘 완료된 업무: {today_completed_tasks}")
+        logger.info(f"오늘 진행중인 업무: {today_ongoing_tasks}")
+        logger.info(f"오늘 총 업무: {today_total_tasks}")
         
         statistics = {
             'total_workers': total_workers,
@@ -904,11 +913,75 @@ def get_admin_statistics():
             'total_tasks': today_total_tasks
         }
         
+        logger.info(f"반환할 통계: {statistics}")
         return jsonify(statistics)
         
     except Exception as e:
         logger.error(f"관리자 통계 조회 에러: {e}")
         return jsonify({'error': '통계 조회에 실패했습니다.'}), 500
+
+# 테스트 데이터 추가 API (개발용)
+@app.route('/api/admin/add-test-data', methods=['POST'])
+def add_test_data():
+    if 'user' not in session:
+        return jsonify({'error': '로그인이 필요합니다.'}), 401
+    
+    # 관리자 권한 확인
+    username = session['user']['username']
+    if username != 'admin':
+        return jsonify({'error': '관리자 권한이 필요합니다.'}), 403
+    
+    if not supabase:
+        return jsonify({'error': '데이터베이스 연결에 문제가 있습니다.'}), 500
+    
+    try:
+        today = date.today().isoformat()
+        
+        # 관리자 사용자 ID 가져오기
+        admin_user = supabase.table('users').select('id').eq('username', 'admin').execute()
+        if not admin_user.data:
+            return jsonify({'error': '관리자 사용자를 찾을 수 없습니다.'}), 404
+        
+        admin_id = admin_user.data[0]['id']
+        
+        # 테스트 데이터 추가
+        test_tasks = [
+            {
+                'user_id': admin_id,
+                'work_date': today,
+                'start_time': '09:00',
+                'task_type': '인출',
+                'description': '오늘 테스트 업무 1',
+                'status': '진행중'
+            },
+            {
+                'user_id': admin_id,
+                'work_date': today,
+                'start_time': '10:00',
+                'end_time': '12:00',
+                'task_type': '보충',
+                'description': '오늘 테스트 업무 2',
+                'status': '완료',
+                'complete_description': '완료되었습니다'
+            },
+            {
+                'user_id': admin_id,
+                'work_date': today,
+                'start_time': '14:00',
+                'task_type': '입고지원',
+                'description': '오늘 테스트 업무 3',
+                'status': '진행중'
+            }
+        ]
+        
+        for task in test_tasks:
+            supabase.table('work_logs').insert(task).execute()
+        
+        return jsonify({'message': '테스트 데이터가 추가되었습니다.', 'added_tasks': len(test_tasks)})
+        
+    except Exception as e:
+        logger.error(f"테스트 데이터 추가 에러: {e}")
+        return jsonify({'error': '테스트 데이터 추가에 실패했습니다.'}), 500
 
 
 
