@@ -1,0 +1,387 @@
+{% extends "base.html" %}
+
+{% block title %}미출대응 - 다이소 안성센터{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2>미출대응 관리</h2>
+                <p class="text-muted">미출가공프로그램을 실행하고 미출대응 업무를 관리할 수 있습니다.</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary">대시보드로 돌아가기</a>
+                <a href="{{ url_for('logout') }}" class="btn btn-outline-danger">로그아웃</a>
+            </div>
+        </div>
+
+        <!-- 미출가공프로그램 실행 섹션 -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">미출가공프로그램 실행</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <p class="text-muted mb-3">
+                            미출가공프로그램.exe를 실행하여 미출대응 업무를 처리할 수 있습니다.
+                        </p>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>주의사항:</strong> 프로그램 실행 시 시스템 리소스를 사용할 수 있습니다.
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <button type="button" class="btn btn-warning btn-lg" onclick="executeMissingProgram()">
+                            <i class="fas fa-play"></i> 미출가공프로그램 실행
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 미출대응 업무 현황 섹션 -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">미출대응 업무 현황</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <div class="card bg-warning text-white">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">오늘 미출대응</h5>
+                                <h3 id="todayMissingResponse">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-success text-white">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">완료된 미출대응</h5>
+                                <h3 id="completedMissingResponse">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-info text-white">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">진행중인 미출대응</h5>
+                                <h3 id="ongoingMissingResponse">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-primary text-white">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">총 미출대응</h5>
+                                <h3 id="totalMissingResponse">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 필터 섹션 -->
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <label for="missingResponseDate" class="form-label">날짜 선택</label>
+                        <input type="date" class="form-control" id="missingResponseDate">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="missingResponseStatus" class="form-label">상태</label>
+                        <select class="form-select" id="missingResponseStatus">
+                            <option value="">전체</option>
+                            <option value="진행중">진행중</option>
+                            <option value="완료">완료</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="missingResponseWorker" class="form-label">작업자</label>
+                        <select class="form-select" id="missingResponseWorker">
+                            <option value="">전체</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">&nbsp;</label>
+                        <div class="d-grid">
+                            <button type="button" class="btn btn-primary" onclick="filterMissingResponse()">필터 적용</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 미출대응 업무 목록 -->
+                <div class="table-responsive">
+                    <table class="table table-striped" id="missingResponseTable">
+                        <thead>
+                            <tr>
+                                <th class="text-center">작업자</th>
+                                <th class="text-center">소속</th>
+                                <th class="text-center">상태</th>
+                                <th class="text-center">시작 시간</th>
+                                <th class="text-center">종료 시간</th>
+                                <th class="text-center">작업일자</th>
+                                <th class="text-center">관리</th>
+                            </tr>
+                        </thead>
+                        <tbody id="missingResponseTableBody">
+                            <!-- 미출대응 업무 목록이 여기에 동적으로 로드됩니다 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 프로그램 실행 로그 섹션 -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">실행 로그</h5>
+            </div>
+            <div class="card-body">
+                <div id="executionLog" class="bg-dark text-light p-3 rounded" style="height: 200px; overflow-y: auto; font-family: monospace;">
+                    <div class="text-muted">프로그램 실행 로그가 여기에 표시됩니다...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 미출대응 업무 수정 모달 -->
+<div class="modal fade" id="editMissingResponseModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">미출대응 업무 수정</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editMissingResponseForm">
+                    <input type="hidden" id="editMissingResponseId">
+                    <div class="mb-3">
+                        <label for="editMissingResponseDate" class="form-label">업무 날짜</label>
+                        <input type="date" class="form-control" id="editMissingResponseDate" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editMissingResponseStartTime" class="form-label">시작 시간</label>
+                        <input type="time" class="form-control" id="editMissingResponseStartTime" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editMissingResponseEndTime" class="form-label">종료 시간</label>
+                        <input type="time" class="form-control" id="editMissingResponseEndTime">
+                    </div>
+                    <div class="mb-3">
+                        <label for="editMissingResponseStatus" class="form-label">상태</label>
+                        <select class="form-select" id="editMissingResponseStatus" required>
+                            <option value="진행중">진행중</option>
+                            <option value="완료">완료</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <button type="button" class="btn btn-primary" onclick="updateMissingResponse()">수정</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// 페이지 로드 시 실행
+document.addEventListener('DOMContentLoaded', function() {
+    loadMissingResponseStatistics();
+    loadMissingResponseTasks();
+    loadWorkers();
+    
+    // 오늘 날짜로 기본 설정
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('missingResponseDate').value = today;
+});
+
+// 미출가공프로그램 실행
+function executeMissingProgram() {
+    const logElement = document.getElementById('executionLog');
+    const timestamp = new Date().toLocaleString('ko-KR');
+    
+    // 로그에 실행 시작 메시지 추가
+    logElement.innerHTML += `<div class="text-info">[${timestamp}] 미출가공프로그램 실행을 시작합니다...</div>`;
+    logElement.scrollTop = logElement.scrollHeight;
+    
+    // 서버에 프로그램 실행 요청
+    fetch('/api/execute-missing-program', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        const timestamp = new Date().toLocaleString('ko-KR');
+        if (data.success) {
+            logElement.innerHTML += `<div class="text-success">[${timestamp}] 프로그램 실행 성공: ${data.message}</div>`;
+        } else {
+            logElement.innerHTML += `<div class="text-danger">[${timestamp}] 프로그램 실행 실패: ${data.message}</div>`;
+        }
+        logElement.scrollTop = logElement.scrollHeight;
+    })
+    .catch(error => {
+        const timestamp = new Date().toLocaleString('ko-KR');
+        logElement.innerHTML += `<div class="text-danger">[${timestamp}] 오류 발생: ${error.message}</div>`;
+        logElement.scrollTop = logElement.scrollHeight;
+    });
+}
+
+// 미출대응 통계 로드
+function loadMissingResponseStatistics() {
+    fetch('/api/admin/missing-response-statistics')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('todayMissingResponse').textContent = data.today || 0;
+            document.getElementById('completedMissingResponse').textContent = data.completed || 0;
+            document.getElementById('ongoingMissingResponse').textContent = data.ongoing || 0;
+            document.getElementById('totalMissingResponse').textContent = data.total || 0;
+        })
+        .catch(error => console.error('통계 로드 오류:', error));
+}
+
+// 미출대응 업무 목록 로드
+function loadMissingResponseTasks() {
+    const date = document.getElementById('missingResponseDate').value;
+    const status = document.getElementById('missingResponseStatus').value;
+    const worker = document.getElementById('missingResponseWorker').value;
+    
+    let url = '/api/admin/missing-response-tasks';
+    const params = new URLSearchParams();
+    if (date) params.append('date', date);
+    if (status) params.append('status', status);
+    if (worker) params.append('worker', worker);
+    
+    if (params.toString()) {
+        url += '?' + params.toString();
+    }
+    
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            const tbody = document.getElementById('missingResponseTableBody');
+            tbody.innerHTML = '';
+            
+            data.forEach(task => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="text-center">${task.username || 'N/A'}</td>
+                    <td class="text-center">${task.department_name || 'N/A'}</td>
+                    <td class="text-center">
+                        <span class="badge ${task.status === '완료' ? 'bg-success' : 'bg-warning'}">${task.status}</span>
+                    </td>
+                    <td class="text-center">${task.start_time || 'N/A'}</td>
+                    <td class="text-center">${task.end_time || 'N/A'}</td>
+                    <td class="text-center">${task.work_date || 'N/A'}</td>
+                    <td class="text-center">
+                        <button class="btn btn-sm btn-outline-primary" onclick="editMissingResponse('${task.id}')">수정</button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteMissingResponse('${task.id}')">삭제</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        })
+        .catch(error => console.error('업무 목록 로드 오류:', error));
+}
+
+// 작업자 목록 로드
+function loadWorkers() {
+    fetch('/api/users')
+        .then(response => response.json())
+        .then(data => {
+            const select = document.getElementById('missingResponseWorker');
+            select.innerHTML = '<option value="">전체</option>';
+            
+            data.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.username;
+                option.textContent = user.username;
+                select.appendChild(option);
+            });
+        })
+        .catch(error => console.error('작업자 목록 로드 오류:', error));
+}
+
+// 필터 적용
+function filterMissingResponse() {
+    loadMissingResponseTasks();
+}
+
+// 미출대응 업무 수정
+function editMissingResponse(taskId) {
+    fetch(`/api/tasks/${taskId}`)
+        .then(response => response.json())
+        .then(task => {
+            document.getElementById('editMissingResponseId').value = task.id;
+            document.getElementById('editMissingResponseDate').value = task.work_date;
+            document.getElementById('editMissingResponseStartTime').value = task.start_time;
+            document.getElementById('editMissingResponseEndTime').value = task.end_time || '';
+            document.getElementById('editMissingResponseStatus').value = task.status;
+            
+            new bootstrap.Modal(document.getElementById('editMissingResponseModal')).show();
+        })
+        .catch(error => console.error('업무 정보 로드 오류:', error));
+}
+
+// 미출대응 업무 수정 저장
+function updateMissingResponse() {
+    const taskId = document.getElementById('editMissingResponseId').value;
+    const formData = {
+        work_date: document.getElementById('editMissingResponseDate').value,
+        start_time: document.getElementById('editMissingResponseStartTime').value,
+        end_time: document.getElementById('editMissingResponseEndTime').value,
+        status: document.getElementById('editMissingResponseStatus').value
+    };
+    
+    fetch(`/api/tasks/${taskId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('editMissingResponseModal')).hide();
+            loadMissingResponseTasks();
+            loadMissingResponseStatistics();
+            alert('업무가 성공적으로 수정되었습니다.');
+        } else {
+            alert('업무 수정에 실패했습니다: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('업무 수정 오류:', error);
+        alert('업무 수정 중 오류가 발생했습니다.');
+    });
+}
+
+// 미출대응 업무 삭제
+function deleteMissingResponse(taskId) {
+    if (confirm('정말로 이 업무를 삭제하시겠습니까?')) {
+        fetch(`/api/tasks/${taskId}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                loadMissingResponseTasks();
+                loadMissingResponseStatistics();
+                alert('업무가 성공적으로 삭제되었습니다.');
+            } else {
+                alert('업무 삭제에 실패했습니다: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('업무 삭제 오류:', error);
+            alert('업무 삭제 중 오류가 발생했습니다.');
+        });
+    }
+}
+</script>
+{% endblock %} 

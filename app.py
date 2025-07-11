@@ -728,6 +728,23 @@ def admin_departments():
     
     return render_template('admin_departments.html', user={'username': username, 'role': 'admin'})
 
+@app.route('/missing_response')
+def missing_response():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    
+    # 관리자 권한 확인
+    username = session['user']['username']
+    if username != 'admin':
+        try:
+            user_info = supabase.table('users').select('*').eq('id', session['user']['id']).execute()
+            if not user_info.data or user_info.data[0]['role'] != 'admin':
+                return redirect(url_for('dashboard'))
+        except:
+            return redirect(url_for('dashboard'))
+    
+    return render_template('missing_response.html', user={'username': username, 'role': 'admin'})
+
 @app.route('/install')
 def install_app():
     """데이터베이스 초기화 페이지"""
@@ -1018,9 +1035,153 @@ def get_admin_statistics():
         logger.error(f"관리자 통계 조회 에러: {e}")
         return jsonify({'error': '통계 조회에 실패했습니다.'}), 500
 
+# 미출가공프로그램 실행 API
+@app.route('/api/execute-missing-program', methods=['POST'])
+def execute_missing_program():
+    if 'user' not in session:
+        return jsonify({'error': '로그인이 필요합니다.'}), 401
+    
+    # 관리자 권한 확인
+    username = session['user']['username']
+    if username != 'admin':
+        try:
+            user_info = supabase.table('users').select('*').eq('id', session['user']['id']).execute()
+            if not user_info.data or user_info.data[0]['role'] != 'admin':
+                return jsonify({'error': '관리자 권한이 필요합니다.'}), 403
+        except:
+            return jsonify({'error': '관리자 권한이 필요합니다.'}), 403
+    
+    try:
+        import subprocess
+        import os
+        
+        # 미출가공프로그램.exe 파일 경로
+        program_path = os.path.join(os.getcwd(), '미출가공프로그램.exe')
+        
+        # 파일 존재 확인
+        if not os.path.exists(program_path):
+            return jsonify({
+                'success': False,
+                'message': '미출가공프로그램.exe 파일을 찾을 수 없습니다.'
+            }), 404
+        
+        # 프로그램 실행 (백그라운드에서 실행)
+        process = subprocess.Popen(
+            [program_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            shell=True
+        )
+        
+        logger.info(f"미출가공프로그램.exe 실행 시작 (PID: {process.pid})")
+        
+        return jsonify({
+            'success': True,
+            'message': f'미출가공프로그램이 성공적으로 실행되었습니다. (PID: {process.pid})',
+            'pid': process.pid
+        })
+        
+    except Exception as e:
+        logger.error(f"미출가공프로그램 실행 에러: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'프로그램 실행 중 오류가 발생했습니다: {str(e)}'
+        }), 500
 
+# 미출대응 통계 API
+@app.route('/api/admin/missing-response-statistics', methods=['GET'])
+def get_missing_response_statistics():
+    if 'user' not in session:
+        return jsonify({'error': '로그인이 필요합니다.'}), 401
+    
+    # 관리자 권한 확인
+    username = session['user']['username']
+    if username != 'admin':
+        try:
+            user_info = supabase.table('users').select('*').eq('id', session['user']['id']).execute()
+            if not user_info.data or user_info.data[0]['role'] != 'admin':
+                return jsonify({'error': '관리자 권한이 필요합니다.'}), 403
+        except:
+            return jsonify({'error': '관리자 권한이 필요합니다.'}), 403
+    
+    if not supabase:
+        return jsonify({'error': '데이터베이스 연결에 문제가 있습니다.'}), 500
+    
+    try:
+        today = get_korean_date().isoformat()
+        
+        # 오늘 미출대응 업무 수
+        today_tasks = supabase.table('work_logs').select('*').eq('task_type', '미출대응').eq('work_date', today).execute()
+        today_count = len(today_tasks.data)
+        
+        # 완료된 미출대응 업무 수
+        completed_tasks = supabase.table('work_logs').select('*').eq('task_type', '미출대응').eq('status', '완료').execute()
+        completed_count = len(completed_tasks.data)
+        
+        # 진행중인 미출대응 업무 수
+        ongoing_tasks = supabase.table('work_logs').select('*').eq('task_type', '미출대응').eq('status', '진행중').execute()
+        ongoing_count = len(ongoing_tasks.data)
+        
+        # 총 미출대응 업무 수
+        total_tasks = supabase.table('work_logs').select('*').eq('task_type', '미출대응').execute()
+        total_count = len(total_tasks.data)
+        
+        return jsonify({
+            'today': today_count,
+            'completed': completed_count,
+            'ongoing': ongoing_count,
+            'total': total_count
+        })
+        
+    except Exception as e:
+        logger.error(f"미출대응 통계 조회 에러: {e}")
+        return jsonify({'error': '통계 조회에 실패했습니다.'}), 500
 
-
+# 미출대응 업무 목록 API
+@app.route('/api/admin/missing-response-tasks', methods=['GET'])
+def get_missing_response_tasks():
+    if 'user' not in session:
+        return jsonify({'error': '로그인이 필요합니다.'}), 401
+    
+    # 관리자 권한 확인
+    username = session['user']['username']
+    if username != 'admin':
+        try:
+            user_info = supabase.table('users').select('*').eq('id', session['user']['id']).execute()
+            if not user_info.data or user_info.data[0]['role'] != 'admin':
+                return jsonify({'error': '관리자 권한이 필요합니다.'}), 403
+        except:
+            return jsonify({'error': '관리자 권한이 필요합니다.'}), 403
+    
+    if not supabase:
+        return jsonify({'error': '데이터베이스 연결에 문제가 있습니다.'}), 500
+    
+    try:
+        # 필터 파라미터 처리
+        date = request.args.get('date')
+        status = request.args.get('status')
+        worker = request.args.get('worker')
+        
+        # 기본 쿼리 (미출대응 업무만)
+        query = supabase.table('work_logs').select('*, users(username, departments(name))').eq('task_type', '미출대응')
+        
+        # 필터 적용
+        if date:
+            query = query.eq('work_date', date)
+        if status:
+            query = query.eq('status', status)
+        if worker:
+            query = query.eq('users.username', worker)
+        
+        # 정렬 (최신순)
+        query = query.order('created_at', desc=True)
+        
+        result = query.execute()
+        return jsonify(result.data)
+        
+    except Exception as e:
+        logger.error(f"미출대응 업무 목록 조회 에러: {e}")
+        return jsonify({'error': '업무 목록 조회에 실패했습니다.'}), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
