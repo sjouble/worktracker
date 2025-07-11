@@ -11,11 +11,6 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
             <a class="navbar-brand" href="{{ url_for('dashboard') }}">다이소 안성센터</a>
-            {% if session.get('user') %}
-            <div class="navbar-nav ms-auto">
-                <span class="navbar-text">{{ session.user.username }}</span>
-            </div>
-            {% endif %}
         </div>
     </nav>
 

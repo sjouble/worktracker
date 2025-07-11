@@ -10,6 +10,9 @@
                 <h2>안녕하세요, {{ user.username }}님!</h2>
                 <p class="text-muted">소속: {{ user.department_name if user.department_name else '미지정' }}</p>
             </div>
+            <div>
+                <a href="{{ url_for('logout') }}" class="btn btn-outline-danger">로그아웃</a>
+            </div>
         </div>
         
         <!-- 새 업무 시작 섹션 -->
