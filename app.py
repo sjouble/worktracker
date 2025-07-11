@@ -380,6 +380,15 @@ def update_task(task_id):
             'updated_at': datetime.now().isoformat()
         }
         
+        # 종료 시간이 있으면 추가
+        if data.get('end_time'):
+            update_data['end_time'] = data['end_time']
+            update_data['status'] = '완료'
+        
+        # 완료 내용이 있으면 추가
+        if data.get('complete_description'):
+            update_data['complete_description'] = data['complete_description']
+        
         result = supabase.table('work_logs').update(update_data).eq('id', task_id).execute()
         
         if result.data:
