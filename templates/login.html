@@ -29,20 +29,42 @@
                     <button type="submit" class="btn btn-primary w-100">로그인</button>
                 </form>
                 
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('register') }}">회원가입</a>
+                </div>
+                
                 <hr class="my-4">
                 
+                <div class="text-center">
+                    <button type="button" class="btn btn-warning w-100" data-bs-toggle="modal" data-bs-target="#adminLoginModal">
+                        관리자 로그인
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 관리자 로그인 모달 -->
+<div class="modal fade" id="adminLoginModal" tabindex="-1" aria-labelledby="adminLoginModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="adminLoginModalLabel">관리자 로그인</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
                 <form method="POST" id="adminLoginForm">
                     <input type="hidden" name="admin_login" value="true">
                     <div class="mb-3">
                         <label for="adminPassword" class="form-label">관리자 비밀번호</label>
-                        <input type="password" class="form-control" id="adminPassword" name="admin_password" placeholder="관리자 비밀번호를 입력하세요">
+                        <input type="password" class="form-control" id="adminPassword" name="admin_password" placeholder="관리자 비밀번호를 입력하세요" required>
                     </div>
-                    <button type="submit" class="btn btn-warning w-100">관리자 로그인</button>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-warning">로그인</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                    </div>
                 </form>
-                
-                <div class="text-center mt-3">
-                    <a href="{{ url_for('register') }}">회원가입</a>
-                </div>
             </div>
         </div>
     </div>
