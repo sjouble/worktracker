@@ -598,6 +598,11 @@ async function saveTaskEdit() {
 
 // 업무 삭제
 async function deleteTask(taskId) {
+    if (!taskId) {
+        alert('삭제할 업무 ID가 없습니다.');
+        return;
+    }
+    
     // 삭제할 업무 ID 저장
     window.deleteTaskId = taskId;
     
@@ -609,6 +614,11 @@ async function deleteTask(taskId) {
 // 모달에서 업무 삭제
 async function deleteTaskFromModal() {
     const taskId = document.getElementById('editTaskId').value;
+    
+    if (!taskId) {
+        alert('삭제할 업무 ID가 없습니다.');
+        return;
+    }
     
     // 삭제할 업무 ID 저장
     window.deleteTaskId = taskId;
@@ -625,6 +635,11 @@ async function deleteTaskFromModal() {
 // 삭제 확인 후 실제 삭제 실행
 async function confirmDeleteTask() {
     const taskId = window.deleteTaskId;
+    
+    if (!taskId) {
+        alert('삭제할 업무 ID가 없습니다.');
+        return;
+    }
     
     try {
         const response = await fetch(`/api/tasks/${taskId}`, {
@@ -644,6 +659,7 @@ async function confirmDeleteTask() {
             alert(cleanErrorMessage(error));
         }
     } catch (error) {
+        console.error('삭제 오류:', error);
         alert(cleanErrorMessage(error));
     }
 }
