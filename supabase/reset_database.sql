@@ -18,7 +18,7 @@ DROP FUNCTION IF EXISTS update_updated_at_column();
 CREATE TABLE departments (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul')
 );
 
 -- users 테이블 생성
@@ -28,8 +28,8 @@ CREATE TABLE users (
     password_hash VARCHAR(255),
     role VARCHAR(20) DEFAULT 'user' CHECK (role IN ('user', 'admin')),
     department_id INTEGER REFERENCES departments(id),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul'),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul')
 );
 
 -- work_logs 테이블 생성 (새로운 스키마)
@@ -45,8 +45,8 @@ CREATE TABLE work_logs (
     complete_description TEXT,
     status VARCHAR(20) DEFAULT '진행중' CHECK (status IN ('진행중', '완료')),
     work_hours DECIMAL(4,2),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul'),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT (NOW() AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul')
 );
 
 -- 기본 데이터 삽입
@@ -100,11 +100,11 @@ CREATE POLICY "work_logs_update_policy" ON work_logs
 CREATE POLICY "work_logs_delete_policy" ON work_logs
     FOR DELETE USING (true);
 
--- 함수 생성: updated_at 자동 업데이트
+-- 함수 생성: updated_at 자동 업데이트 (한국 시간대 기준)
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
-    NEW.updated_at = NOW();
+    NEW.updated_at = (NOW() AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Seoul');
     RETURN NEW;
 END;
 $$ language 'plpgsql';

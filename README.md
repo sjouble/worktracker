@@ -16,11 +16,14 @@ WorkTracker는 사용자별 업무를 추적하고 관리하는 웹 애플리케
 - **업무 완료**: 종료 시간 입력 시 완료 처리, 완료 내용 기록
 - **시간 관리**: 소요 시간 자동 계산 (24시간 형식)
 - **조회 기능**: 오늘/특정 날짜/기간별 업무 조회
+- **시간대**: 한국 시간대(KST) 기준으로 모든 시간 처리
 
 ### 관리자 기능
 - **소속 관리**: 새 소속 추가, 수정, 삭제
 - **사용자 소속 변경**: 관리자가 사용자의 소속을 변경 가능
-- 전체 사용자 업무 현황 조회
+- **전체 사용자 업무 현황 조회**: 필터링 및 검색 기능
+- **실시간 통계**: 오늘 작업 참여자 수, 진행중인 업무 수, 총 업무 수
+- **업무 관리**: 모든 사용자의 업무 수정/삭제 가능
 
 ## 기술 스택
 
@@ -29,6 +32,7 @@ WorkTracker는 사용자별 업무를 추적하고 관리하는 웹 애플리케
 - **Frontend**: HTML, CSS, JavaScript, Bootstrap 5
 - **Authentication**: Session-based
 - **Deployment**: Render
+- **Timezone**: 한국 시간대(KST) 지원
 
 ## 배포 방법 (Render)
 
@@ -36,6 +40,7 @@ WorkTracker는 사용자별 업무를 추적하고 관리하는 웹 애플리케
 
 1. [Supabase](https://supabase.com)에서 새 프로젝트 생성
 2. SQL 편집기에서 `supabase/reset_database.sql` 실행 (완전 초기화)
+3. **시간대 수정**: `supabase/fix_timezone.sql` 실행 (기존 데이터가 있는 경우)
 
 ### 2. Render 배포
 
@@ -94,6 +99,7 @@ python app.py
 3. **업무 완료**: 진행중인 업무의 "완료" 버튼 클릭 → 종료 시간, 완료 내용 입력
 4. **업무 조회**: 오늘/특정 날짜/기간별 조회 가능
 5. **진행 상태**: 진행중인 업무는 "진행중" 배지로 표시
+6. **업무 수정**: 진행중인 업무는 수정 가능
 
 ### 소속 관리 (관리자 전용)
 1. 관리자 대시보드에서 "소속 관리" 섹션 확인
@@ -106,17 +112,18 @@ python app.py
 ### departments (소속)
 - `id`: 소속 ID (Primary Key)
 - `name`: 소속명 (Unique)
-- `created_at`: 생성일시
+- `created_at`: 생성일시 (KST)
 
 ### users (사용자)
 - `id`: 사용자 ID (UUID, Primary Key)
 - `username`: 사용자명 (Unique)
 - `role`: 역할 (admin/user)
 - `department_id`: 소속 ID (Foreign Key)
-- `created_at`: 가입일시
+- `created_at`: 가입일시 (KST)
+- `updated_at`: 수정일시 (KST)
 
 ### work_logs (업무 로그)
-- `id`: 로그 ID (UUID, Primary Key)
+- `id`: 로그 ID (Primary Key)
 - `user_id`: 사용자 ID (Foreign Key)
 - `department_id`: 소속 ID (Foreign Key)
 - `work_date`: 업무 날짜
@@ -126,61 +133,31 @@ python app.py
 - `description`: 업무 내용 (TEXT)
 - `complete_description`: 완료 내용 (TEXT)
 - `status`: 상태 (진행중/완료)
-- `work_hours`: 소요 시간
-- `created_at`: 생성일시
-- `updated_at`: 수정일시
+- `work_hours`: 소요 시간 (DECIMAL)
+- `created_at`: 생성일시 (KST)
+- `updated_at`: 수정일시 (KST)
 
-## API 엔드포인트
+## 최근 업데이트
 
-### 인증
-- `GET /` - 메인 페이지
-- `GET/POST /login` - 로그인
-- `GET/POST /register` - 회원가입
-- `GET /logout` - 로그아웃
+### v2.0 (2024년)
+- **시간대 수정**: 모든 시간을 한국 시간대(KST) 기준으로 처리
+- **관리자 대시보드 개선**: 실시간 통계 및 업무 관리 기능 강화
+- **UI/UX 개선**: 모달 다이얼로그, 토스트 메시지, 반응형 디자인
+- **권한 관리 강화**: 관리자 권한으로 모든 업무 관리 가능
+- **버그 수정**: 업무 수정/삭제 기능 개선
 
-### 대시보드
-- `GET /dashboard` - 사용자 대시보드
-- `GET /admin_dashboard` - 관리자 대시보드
+## 문제 해결
 
-### 업무 관리
-- `GET /api/tasks` - 업무 목록 조회 (날짜/기간 필터 지원)
-- `POST /api/tasks` - 새 업무 시작
-- `PUT /api/tasks/<id>/complete` - 업무 완료 처리
+### 시간대 문제
+- 모든 시간은 한국 시간대(KST) 기준으로 저장됩니다
+- 기존 데이터가 있다면 `supabase/fix_timezone.sql` 실행
+- 프론트엔드에서도 한국 시간대로 표시됩니다
 
-### 소속 관리 (관리자 전용)
-- `GET /api/departments` - 소속 목록 조회
-- `POST /api/departments` - 새 소속 생성
-- `PUT /api/departments/<id>` - 소속 수정
-- `DELETE /api/departments/<id>` - 소속 삭제
-
-### 사용자 관리 (관리자 전용)
-- `GET /api/users` - 사용자 목록 조회
-- `PUT /api/users/<id>/department` - 사용자 소속 변경
-
-## 보안
-
-- Row Level Security (RLS) 정책 적용
-- 관리자 권한 검증
-- 사용자별 데이터 접근 제한
-- 세션 기반 인증
-
-## 파일 구조
-
-```
-worktracker/
-├── app.py                 # 메인 Flask 애플리케이션
-├── wsgi.py               # WSGI 진입점
-├── requirements.txt      # Python 의존성
-├── render.yaml          # Render 배포 설정
-├── Procfile             # Heroku/Render 프로세스 설정
-├── .env.example         # 환경 변수 예시
-├── supabase/
-│   └── reset_database.sql # 데이터베이스 완전 초기화
-├── templates/           # HTML 템플릿
-├── static/             # 정적 파일 (CSS, JS)
-└── docs/              # 문서
-```
+### 배포 문제
+- Render에서 환경 변수가 올바르게 설정되었는지 확인
+- Supabase 프로젝트 URL과 API 키가 정확한지 확인
+- 로그를 확인하여 구체적인 오류 메시지 확인
 
 ## 라이선스
 
-MIT License 
+이 프로젝트는 MIT 라이선스 하에 배포됩니다. 

@@ -335,7 +335,7 @@ def create_task():
             'task_type': data['task_type'],
             'description': data.get('description', ''),
             'status': data.get('status', '진행중'),
-            'created_at': datetime.now().isoformat()
+            'created_at': get_korean_datetime().isoformat()
         }
         
         result = supabase.table('work_logs').insert(task_data).execute()
@@ -495,7 +495,7 @@ def complete_task(task_id):
             'end_time': data['end_time'],
             'complete_description': data.get('complete_description', ''),
             'status': '완료',
-            'updated_at': datetime.now().isoformat()
+            'updated_at': get_korean_datetime().isoformat()
         }
         
         result = supabase.table('work_logs').update(update_data).eq('id', task_id).execute()
@@ -606,7 +606,7 @@ def create_department():
         # 소속 생성
         department_data = {
             'name': name,
-            'created_at': datetime.now().isoformat()
+            'created_at': get_korean_datetime().isoformat()
         }
         
         result = supabase.table('departments').insert(department_data).execute()
