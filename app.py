@@ -242,6 +242,130 @@ def logout():
     session.pop('user', None)
     return redirect(url_for('login'))
 
+# API 엔드포인트들
+@app.route('/api/tasks', methods=['GET'])
+def get_tasks():
+    if 'user' not in session:
+        return jsonify({'error': '로그인이 필요합니다.'}), 401
+    
+    user_id = session['user']['id']
+    
+    if not supabase:
+        return jsonify({'error': '데이터베이스 연결에 문제가 있습니다.'}), 500
+    
+    try:
+        # 필터 파라미터 처리
+        date_filter = request.args.get('date')
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        
+        # 기본 쿼리 (사용자별)
+        query = supabase.table('work_logs').select('*').eq('user_id', user_id)
+        
+        # 날짜 필터 적용
+        if date_filter:
+            query = query.eq('work_date', date_filter)
+        elif start_date and end_date:
+            query = query.gte('work_date', start_date).lte('work_date', end_date)
+        else:
+            # 기본값: 오늘 날짜
+            today = date.today().isoformat()
+            query = query.eq('work_date', today)
+        
+        # 정렬 (최신순)
+        query = query.order('created_at', desc=True)
+        
+        result = query.execute()
+        return jsonify(result.data)
+        
+    except Exception as e:
+        logger.error(f"업무 목록 조회 에러: {e}")
+        return jsonify({'error': '업무 목록 조회에 실패했습니다.'}), 500
+
+@app.route('/api/tasks', methods=['POST'])
+def create_task():
+    if 'user' not in session:
+        return jsonify({'error': '로그인이 필요합니다.'}), 401
+    
+    user_id = session['user']['id']
+    
+    if not supabase:
+        return jsonify({'error': '데이터베이스 연결에 문제가 있습니다.'}), 500
+    
+    try:
+        data = request.get_json()
+        
+        # 필수 필드 검증
+        required_fields = ['work_date', 'start_time', 'task_type']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({'error': f'{field} 필드가 필요합니다.'}), 400
+        
+        # 업무 로그 데이터 생성
+        task_data = {
+            'id': str(uuid.uuid4()),
+            'user_id': user_id,
+            'work_date': data['work_date'],
+            'start_time': data['start_time'],
+            'task_type': data['task_type'],
+            'description': data.get('description', ''),
+            'status': data.get('status', '진행중'),
+            'created_at': datetime.now().isoformat()
+        }
+        
+        result = supabase.table('work_logs').insert(task_data).execute()
+        
+        if result.data:
+            return jsonify(result.data[0]), 201
+        else:
+            return jsonify({'error': '업무 등록에 실패했습니다.'}), 500
+            
+    except Exception as e:
+        logger.error(f"업무 등록 에러: {e}")
+        return jsonify({'error': '업무 등록에 실패했습니다.'}), 500
+
+@app.route('/api/tasks/<task_id>/complete', methods=['PUT'])
+def complete_task(task_id):
+    if 'user' not in session:
+        return jsonify({'error': '로그인이 필요합니다.'}), 401
+    
+    user_id = session['user']['id']
+    
+    if not supabase:
+        return jsonify({'error': '데이터베이스 연결에 문제가 있습니다.'}), 500
+    
+    try:
+        data = request.get_json()
+        
+        # 필수 필드 검증
+        if not data.get('end_time'):
+            return jsonify({'error': '종료 시간이 필요합니다.'}), 400
+        
+        # 업무 존재 및 권한 확인
+        task_result = supabase.table('work_logs').select('*').eq('id', task_id).eq('user_id', user_id).execute()
+        
+        if not task_result.data:
+            return jsonify({'error': '업무를 찾을 수 없거나 권한이 없습니다.'}), 404
+        
+        # 업무 완료 처리
+        update_data = {
+            'end_time': data['end_time'],
+            'complete_description': data.get('complete_description', ''),
+            'status': '완료',
+            'updated_at': datetime.now().isoformat()
+        }
+        
+        result = supabase.table('work_logs').update(update_data).eq('id', task_id).execute()
+        
+        if result.data:
+            return jsonify(result.data[0])
+        else:
+            return jsonify({'error': '업무 완료 처리에 실패했습니다.'}), 500
+            
+    except Exception as e:
+        logger.error(f"업무 완료 처리 에러: {e}")
+        return jsonify({'error': '업무 완료 처리에 실패했습니다.'}), 500
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False) 

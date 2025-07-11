@@ -11,11 +11,13 @@ body {
 .card {
     box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
     border: 1px solid rgba(0, 0, 0, 0.125);
+    margin-bottom: 1.5rem;
 }
 
 .card-header {
     background-color: #f8f9fa;
     border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+    font-weight: 600;
 }
 
 .table th {
@@ -57,4 +59,116 @@ body {
 
 .nav-link:hover {
     color: rgba(255, 255, 255, 1) !important;
+}
+
+/* 업무 대시보드 전용 스타일 */
+.current-task-card {
+    border-left: 4px solid #ffc107;
+    background-color: #fff3cd;
+}
+
+.current-task-card .card-body {
+    padding: 1rem;
+}
+
+.current-task-card .badge {
+    font-size: 0.8em;
+    padding: 0.4em 0.6em;
+}
+
+.completed-task-row {
+    transition: background-color 0.2s ease;
+}
+
+.completed-task-row:hover {
+    background-color: #f8f9fa;
+}
+
+.filter-section {
+    background-color: #e9ecef;
+    border-radius: 0.375rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.time-input {
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+}
+
+.date-input {
+    font-weight: 500;
+}
+
+.task-type-select {
+    font-weight: 500;
+}
+
+.complete-form {
+    background-color: #d4edda;
+    border: 1px solid #c3e6cb;
+    border-radius: 0.375rem;
+}
+
+.complete-form .card-header {
+    background-color: #d4edda;
+    color: #155724;
+    font-weight: 600;
+}
+
+.status-badge {
+    font-size: 0.8em;
+    padding: 0.4em 0.6em;
+    border-radius: 0.25rem;
+}
+
+.status-badge.progress {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.status-badge.completed {
+    background-color: #28a745;
+    color: white;
+}
+
+.table-responsive {
+    border-radius: 0.375rem;
+    overflow: hidden;
+}
+
+.table thead th {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    font-weight: 600;
+    text-align: center;
+}
+
+.table tbody td {
+    vertical-align: middle;
+    text-align: center;
+}
+
+.table tbody td:first-child,
+.table tbody td:nth-child(2),
+.table tbody td:nth-child(3) {
+    text-align: left;
+}
+
+.duration-cell {
+    font-weight: 600;
+    color: #495057;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 2rem;
+    color: #6c757d;
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
 } 

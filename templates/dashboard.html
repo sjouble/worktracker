@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}대시보드 - WorkTracker{% endblock %}
+{% block title %}업무 대시보드 - WorkTracker{% endblock %}
 
 {% block content %}
 <div class="row">
@@ -15,18 +15,30 @@
             </div>
         </div>
         
-        <!-- 업무 등록 섹션 -->
+        <!-- 업무 시작 섹션 -->
         <div class="card mb-4">
             <div class="card-header">
-                <h5 class="mb-0">새 업무 등록</h5>
+                <h5 class="mb-0">새 업무 시작</h5>
             </div>
             <div class="card-body">
                 <form id="taskForm">
                     <div class="row">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="workDate" class="form-label">업무 날짜</label>
+                                <input type="date" class="form-control date-input" id="workDate" required>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="startTime" class="form-label">시작 시간</label>
+                                <input type="time" class="form-control time-input" id="startTime" required>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
                             <div class="mb-3">
                                 <label for="taskType" class="form-label">업무 유형</label>
-                                <select class="form-select" id="taskType" required>
+                                <select class="form-select task-type-select" id="taskType" required>
                                     <option value="">업무 유형 선택</option>
                                     <option value="인출">인출</option>
                                     <option value="보충">보충</option>
@@ -40,10 +52,10 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="col-md-8">
+                        <div class="col-md-3">
                             <div class="mb-3">
-                                <label for="description" class="form-label">업무 설명</label>
-                                <input type="text" class="form-control" id="description" placeholder="업무에 대한 간단한 설명을 입력하세요">
+                                <label for="description" class="form-label">업무 내용</label>
+                                <input type="text" class="form-control" id="description" placeholder="업무 내용을 입력하세요">
                             </div>
                         </div>
                     </div>
@@ -64,21 +76,96 @@
             </div>
         </div>
         
-        <!-- 완료된 업무 -->
+        <!-- 업무 완료 처리 -->
+        <div class="card mb-4 complete-form" id="completeTaskCard" style="display: none;">
+            <div class="card-header">
+                <h5 class="mb-0">업무 완료</h5>
+            </div>
+            <div class="card-body">
+                <form id="completeTaskForm">
+                    <input type="hidden" id="completeTaskId">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="endTime" class="form-label">종료 시간</label>
+                                <input type="time" class="form-control time-input" id="endTime" required>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="completeDescription" class="form-label">완료 내용</label>
+                                <input type="text" class="form-control" id="completeDescription" placeholder="완료된 업무 내용을 입력하세요">
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-success">업무 완료</button>
+                    <button type="button" class="btn btn-secondary" onclick="cancelComplete()">취소</button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- 조회 필터 -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">업무 조회</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="mb-3">
+                            <label for="filterType" class="form-label">조회 유형</label>
+                            <select class="form-select" id="filterType">
+                                <option value="today">오늘</option>
+                                <option value="date">특정 날짜</option>
+                                <option value="period">기간</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3" id="dateFilter" style="display: none;">
+                        <div class="mb-3">
+                            <label for="filterDate" class="form-label">날짜 선택</label>
+                            <input type="date" class="form-control" id="filterDate">
+                        </div>
+                    </div>
+                    <div class="col-md-3" id="startDateFilter" style="display: none;">
+                        <div class="mb-3">
+                            <label for="filterStartDate" class="form-label">시작 날짜</label>
+                            <input type="date" class="form-control" id="filterStartDate">
+                        </div>
+                    </div>
+                    <div class="col-md-3" id="endDateFilter" style="display: none;">
+                        <div class="mb-3">
+                            <label for="filterEndDate" class="form-label">종료 날짜</label>
+                            <input type="date" class="form-control" id="filterEndDate">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mb-3">
+                            <label class="form-label">&nbsp;</label>
+                            <button type="button" class="btn btn-primary d-block" onclick="loadTasks()">조회</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 완료된 업무 목록 -->
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">완료된 업무</h5>
+                <h5 class="mb-0">완료된 업무 목록</h5>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
                     <table class="table table-striped">
                         <thead>
                             <tr>
+                                <th>날짜</th>
                                 <th>업무 유형</th>
-                                <th>설명</th>
+                                <th>업무 내용</th>
                                 <th>시작 시간</th>
                                 <th>종료 시간</th>
                                 <th>소요 시간</th>
+                                <th>완료 내용</th>
                             </tr>
                         </thead>
                         <tbody id="completedTasks">
@@ -92,20 +179,56 @@
 </div>
 
 <script>
-// 페이지 로드 시 업무 목록 불러오기
+// 페이지 로드 시 초기화
 document.addEventListener('DOMContentLoaded', function() {
+    // 오늘 날짜를 기본값으로 설정
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('workDate').value = today;
+    
+    // 현재 시간을 기본값으로 설정 (24시간 형식)
+    const now = new Date();
+    const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+    document.getElementById('startTime').value = currentTime;
+    
+    // 조회 필터 이벤트 리스너
+    document.getElementById('filterType').addEventListener('change', function() {
+        const filterType = this.value;
+        const dateFilter = document.getElementById('dateFilter');
+        const startDateFilter = document.getElementById('startDateFilter');
+        const endDateFilter = document.getElementById('endDateFilter');
+        
+        // 모든 필터 숨기기
+        dateFilter.style.display = 'none';
+        startDateFilter.style.display = 'none';
+        endDateFilter.style.display = 'none';
+        
+        // 선택된 필터 타입에 따라 표시
+        if (filterType === 'date') {
+            dateFilter.style.display = 'block';
+            document.getElementById('filterDate').value = today;
+        } else if (filterType === 'period') {
+            startDateFilter.style.display = 'block';
+            endDateFilter.style.display = 'block';
+            document.getElementById('filterStartDate').value = today;
+            document.getElementById('filterEndDate').value = today;
+        }
+    });
+    
+    // 업무 목록 불러오기
     loadTasks();
 });
 
-// 업무 등록
+// 업무 시작
 document.getElementById('taskForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     
+    const workDate = document.getElementById('workDate').value;
+    const startTime = document.getElementById('startTime').value;
     const taskType = document.getElementById('taskType').value;
     const description = document.getElementById('description').value;
     
-    if (!taskType) {
-        alert('업무 유형을 선택해주세요.');
+    if (!workDate || !startTime || !taskType) {
+        alert('필수 항목을 모두 입력해주세요.');
         return;
     }
     
@@ -116,28 +239,93 @@ document.getElementById('taskForm').addEventListener('submit', async function(e)
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
+                work_date: workDate,
+                start_time: startTime,
                 task_type: taskType,
                 description: description,
-                start_time: new Date().toISOString()
+                status: '진행중'
             })
         });
         
         if (response.ok) {
             document.getElementById('taskForm').reset();
+            // 기본값 다시 설정
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('workDate').value = today;
+            const now = new Date();
+            const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+            document.getElementById('startTime').value = currentTime;
+            
             loadTasks();
+            alert('업무가 시작되었습니다.');
         } else {
             const error = await response.json();
-            alert(error.error || '업무 등록에 실패했습니다.');
+            alert(error.error || '업무 시작에 실패했습니다.');
         }
     } catch (error) {
-        alert('업무 등록 중 오류가 발생했습니다.');
+        alert('업무 시작 중 오류가 발생했습니다.');
+    }
+});
+
+// 업무 완료 처리
+document.getElementById('completeTaskForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const taskId = document.getElementById('completeTaskId').value;
+    const endTime = document.getElementById('endTime').value;
+    const completeDescription = document.getElementById('completeDescription').value;
+    
+    if (!endTime) {
+        alert('종료 시간을 입력해주세요.');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/tasks/${taskId}/complete`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                end_time: endTime,
+                complete_description: completeDescription
+            })
+        });
+        
+        if (response.ok) {
+            cancelComplete();
+            loadTasks();
+            alert('업무가 완료되었습니다.');
+        } else {
+            const error = await response.json();
+            alert(error.error || '업무 완료 처리에 실패했습니다.');
+        }
+    } catch (error) {
+        alert('업무 완료 처리 중 오류가 발생했습니다.');
     }
 });
 
 // 업무 목록 불러오기
 async function loadTasks() {
     try {
-        const response = await fetch('/api/tasks');
+        const filterType = document.getElementById('filterType').value;
+        let url = '/api/tasks';
+        
+        // 필터 파라미터 추가
+        if (filterType === 'date') {
+            const filterDate = document.getElementById('filterDate').value;
+            if (filterDate) {
+                url += `?date=${filterDate}`;
+            }
+        } else if (filterType === 'period') {
+            const startDate = document.getElementById('filterStartDate').value;
+            const endDate = document.getElementById('filterEndDate').value;
+            if (startDate && endDate) {
+                url += `?start_date=${startDate}&end_date=${endDate}`;
+            }
+        }
+        
+        const response = await fetch(url);
         const tasks = await response.json();
         
         // 현재 진행 중인 업무
@@ -145,21 +333,21 @@ async function loadTasks() {
         const currentTasksDiv = document.getElementById('currentTasks');
         
         if (currentTasks.length === 0) {
-            currentTasksDiv.innerHTML = '<p class="text-muted">현재 진행 중인 업무가 없습니다.</p>';
+            currentTasksDiv.innerHTML = '<div class="empty-state"><i class="fas fa-clock"></i><p>현재 진행 중인 업무가 없습니다.</p></div>';
         } else {
             let currentTasksHTML = '';
             currentTasks.forEach(task => {
-                const startTime = new Date(task.start_time).toLocaleString();
+                const startTime = task.start_time;
                 currentTasksHTML += `
-                    <div class="card mb-2">
+                    <div class="card mb-2 current-task-card">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
-                                    <h6 class="card-title">${task.task_type}</h6>
-                                    <p class="card-text">${task.description || '설명 없음'}</p>
-                                    <small class="text-muted">시작 시간: ${startTime}</small>
+                                    <h6 class="card-title">${task.task_type} <span class="badge status-badge progress">진행중</span></h6>
+                                    <p class="card-text">${task.description || '내용 없음'}</p>
+                                    <small class="text-muted">날짜: ${task.work_date} | 시작 시간: ${startTime}</small>
                                 </div>
-                                <button class="btn btn-success" onclick="completeTask(${task.id})">완료</button>
+                                <button class="btn btn-success" onclick="showCompleteForm(${task.id})">완료</button>
                             </div>
                         </div>
                     </div>
@@ -173,21 +361,21 @@ async function loadTasks() {
         const completedTasksTbody = document.getElementById('completedTasks');
         
         if (completedTasks.length === 0) {
-            completedTasksTbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">완료된 업무가 없습니다.</td></tr>';
+            completedTasksTbody.innerHTML = '<tr><td colspan="7" class="text-center empty-state"><i class="fas fa-check-circle"></i><p>완료된 업무가 없습니다.</p></td></tr>';
         } else {
             let completedTasksHTML = '';
             completedTasks.forEach(task => {
-                const startTime = new Date(task.start_time).toLocaleString();
-                const endTime = new Date(task.end_time).toLocaleString();
                 const duration = calculateDuration(task.start_time, task.end_time);
                 
                 completedTasksHTML += `
-                    <tr>
+                    <tr class="completed-task-row">
+                        <td>${task.work_date}</td>
                         <td>${task.task_type}</td>
-                        <td>${task.description || '설명 없음'}</td>
-                        <td>${startTime}</td>
-                        <td>${endTime}</td>
-                        <td>${duration}</td>
+                        <td>${task.description || '내용 없음'}</td>
+                        <td>${task.start_time}</td>
+                        <td>${task.end_time}</td>
+                        <td class="duration-cell">${duration}</td>
+                        <td>${task.complete_description || '-'}</td>
                     </tr>
                 `;
             });
@@ -198,37 +386,46 @@ async function loadTasks() {
     }
 }
 
-// 업무 완료
-async function completeTask(taskId) {
-    try {
-        const response = await fetch(`/api/tasks/${taskId}/complete`, {
-            method: 'PUT'
-        });
-        
-        if (response.ok) {
-            loadTasks();
-        } else {
-            const error = await response.json();
-            alert(error.error || '업무 완료 처리에 실패했습니다.');
-        }
-    } catch (error) {
-        alert('업무 완료 처리 중 오류가 발생했습니다.');
-    }
+// 완료 폼 표시
+function showCompleteForm(taskId) {
+    document.getElementById('completeTaskId').value = taskId;
+    
+    // 현재 시간을 기본값으로 설정
+    const now = new Date();
+    const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+    document.getElementById('endTime').value = currentTime;
+    
+    document.getElementById('completeTaskCard').style.display = 'block';
+    document.getElementById('completeTaskCard').scrollIntoView({ behavior: 'smooth' });
+}
+
+// 완료 폼 취소
+function cancelComplete() {
+    document.getElementById('completeTaskCard').style.display = 'none';
+    document.getElementById('completeTaskForm').reset();
 }
 
 // 소요 시간 계산
 function calculateDuration(startTime, endTime) {
-    const start = new Date(startTime);
-    const end = new Date(endTime);
-    const diff = end - start;
+    const [startHour, startMin] = startTime.split(':').map(Number);
+    const [endHour, endMin] = endTime.split(':').map(Number);
     
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    let diffHour = endHour - startHour;
+    let diffMin = endMin - startMin;
     
-    if (hours > 0) {
-        return `${hours}시간 ${minutes}분`;
+    if (diffMin < 0) {
+        diffHour -= 1;
+        diffMin += 60;
+    }
+    
+    if (diffHour < 0) {
+        diffHour += 24; // 하루를 넘어간 경우
+    }
+    
+    if (diffHour > 0) {
+        return `${diffHour}시간 ${diffMin}분`;
     } else {
-        return `${minutes}분`;
+        return `${diffMin}분`;
     }
 }
 </script>

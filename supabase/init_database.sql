@@ -34,14 +34,17 @@ CREATE TABLE users (
 
 -- work_logs 테이블 생성
 CREATE TABLE work_logs (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
     department_id INTEGER REFERENCES departments(id),
     work_date DATE NOT NULL,
     start_time TIME,
     end_time TIME,
-    work_hours DECIMAL(4,2),
+    task_type VARCHAR(50) NOT NULL,
     description TEXT,
+    complete_description TEXT,
+    status VARCHAR(20) DEFAULT '진행중' CHECK (status IN ('진행중', '완료')),
+    work_hours DECIMAL(4,2),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -61,6 +64,8 @@ CREATE INDEX idx_users_username ON users(username);
 CREATE INDEX idx_users_department ON users(department_id);
 CREATE INDEX idx_work_logs_user_date ON work_logs(user_id, work_date);
 CREATE INDEX idx_work_logs_department ON work_logs(department_id);
+CREATE INDEX idx_work_logs_status ON work_logs(status);
+CREATE INDEX idx_work_logs_task_type ON work_logs(task_type);
 
 -- RLS (Row Level Security) 활성화
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
