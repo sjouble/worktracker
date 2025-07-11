@@ -17,14 +17,145 @@
             </div>
         </div>
         
+        <!-- 통계 현황 섹션 -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body">
+                        <h5 class="card-title">총 작업자 수</h5>
+                        <h3 id="totalWorkers">0</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body">
+                        <h5 class="card-title">완료된 업무</h5>
+                        <h3 id="completedTasks">0</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-white">
+                    <div class="card-body">
+                        <h5 class="card-title">진행중인 업무</h5>
+                        <h3 id="ongoingTasks">0</h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body">
+                        <h5 class="card-title">총 업무 수</h5>
+                        <h3 id="totalTasks">0</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 필터 및 검색 섹션 -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">필터 및 검색</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="mb-3">
+                            <label for="departmentFilter" class="form-label">소속</label>
+                            <select class="form-select" id="departmentFilter">
+                                <option value="">전체 소속</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mb-3">
+                            <label for="taskTypeFilter" class="form-label">업무 유형</label>
+                            <select class="form-select" id="taskTypeFilter">
+                                <option value="">전체 유형</option>
+                                <option value="인출">인출</option>
+                                <option value="보충">보충</option>
+                                <option value="입고지원">입고지원</option>
+                                <option value="미출대응">미출대응</option>
+                                <option value="단내리기">단내리기</option>
+                                <option value="이고">이고</option>
+                                <option value="과출">과출</option>
+                                <option value="파손">파손</option>
+                                <option value="기타">기타</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mb-3">
+                            <label for="statusFilter" class="form-label">상태</label>
+                            <select class="form-select" id="statusFilter">
+                                <option value="">전체 상태</option>
+                                <option value="진행중">진행중</option>
+                                <option value="완료">완료</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mb-3">
+                            <label class="form-label">&nbsp;</label>
+                            <div class="d-grid">
+                                <button type="button" class="btn btn-primary" onclick="applyFilters()">필터 적용</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="mb-3">
+                            <label for="timeFilter" class="form-label">시간대 검색</label>
+                            <select class="form-select" id="timeFilter">
+                                <option value="">전체 시간</option>
+                                <option value="09:00-12:00">09:00-12:00</option>
+                                <option value="12:00-15:00">12:00-15:00</option>
+                                <option value="15:00-18:00">15:00-18:00</option>
+                                <option value="18:00-21:00">18:00-21:00</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mb-3">
+                            <label for="startDate" class="form-label">시작 날짜</label>
+                            <input type="date" class="form-control" id="startDate">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mb-3">
+                            <label for="endDate" class="form-label">종료 날짜</label>
+                            <input type="date" class="form-control" id="endDate">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mb-3">
+                            <label class="form-label">&nbsp;</label>
+                            <div class="d-grid">
+                                <button type="button" class="btn btn-success" onclick="searchByPeriod()">기간 검색</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- 업무 관리 섹션 -->
         <div class="card">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">전체 업무 목록</h5>
+                <div>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="exportToExcel()">엑셀 다운로드</button>
+                    <button type="button" class="btn btn-outline-info btn-sm" onclick="showStatistics()">통계 보기</button>
+                </div>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-striped">
+                    <table class="table table-striped" id="tasksTable">
                         <thead>
                             <tr>
                                 <th>소속</th>
@@ -37,26 +168,8 @@
                                 <th>관리</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            {% for task in tasks %}
-                            <tr>
-                                <td>{{ task.users.departments.name if task.users and task.users.departments else '미지정' }}</td>
-                                <td>{{ task.users.username if task.users else 'Unknown' }}</td>
-                                <td>{{ task.task_type }}</td>
-                                <td>
-                                    <span class="badge {% if task.status == '완료' %}bg-success{% else %}bg-warning{% endif %}">
-                                        {{ task.status }}
-                                    </span>
-                                </td>
-                                <td>{{ task.start_time }}</td>
-                                <td>{{ task.end_time or '-' }}</td>
-                                <td>{{ task.work_date if task.work_date else '-' }}</td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-primary">수정</button>
-                                    <button class="btn btn-sm btn-outline-danger">삭제</button>
-                                </td>
-                            </tr>
-                            {% endfor %}
+                        <tbody id="tasksTableBody">
+                            <!-- 업무 목록이 여기에 동적으로 로드됩니다 -->
                         </tbody>
                     </table>
                 </div>
@@ -64,4 +177,237 @@
         </div>
     </div>
 </div>
+
+<!-- 통계 모달 -->
+<div class="modal fade" id="statisticsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">상세 통계 현황</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>소속별 작업 현황</h6>
+                        <div id="departmentStats"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>업무 유형별 현황</h6>
+                        <div id="taskTypeStats"></div>
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-md-12">
+                        <h6>시간대별 참여 인원</h6>
+                        <div id="timeStats"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let allTasks = [];
+let filteredTasks = [];
+
+// 페이지 로드 시 데이터 불러오기
+document.addEventListener('DOMContentLoaded', function() {
+    loadTasks();
+    loadDepartments();
+});
+
+// 업무 목록 불러오기
+async function loadTasks() {
+    try {
+        const response = await fetch('/api/admin/tasks');
+        allTasks = await response.json();
+        filteredTasks = [...allTasks];
+        renderTasks();
+        updateStatistics();
+    } catch (error) {
+        console.error('업무 목록 불러오기 실패:', error);
+    }
+}
+
+// 소속 목록 불러오기
+async function loadDepartments() {
+    try {
+        const response = await fetch('/api/departments');
+        const departments = await response.json();
+        
+        const select = document.getElementById('departmentFilter');
+        departments.forEach(dept => {
+            const option = document.createElement('option');
+            option.value = dept.name;
+            option.textContent = dept.name;
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error('소속 목록 불러오기 실패:', error);
+    }
+}
+
+// 업무 목록 렌더링
+function renderTasks() {
+    const tbody = document.getElementById('tasksTableBody');
+    tbody.innerHTML = '';
+    
+    filteredTasks.forEach(task => {
+        const row = `
+            <tr>
+                <td>${task.users?.departments?.name || '미지정'}</td>
+                <td>${task.users?.username || 'Unknown'}</td>
+                <td>${task.task_type}</td>
+                <td>
+                    <span class="badge ${task.status === '완료' ? 'bg-success' : 'bg-warning'}">
+                        ${task.status}
+                    </span>
+                </td>
+                <td>${task.start_time}</td>
+                <td>${task.end_time || '-'}</td>
+                <td>${task.work_date || '-'}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary">수정</button>
+                    <button class="btn btn-sm btn-outline-danger">삭제</button>
+                </td>
+            </tr>
+        `;
+        tbody.innerHTML += row;
+    });
+}
+
+// 통계 업데이트
+function updateStatistics() {
+    const totalWorkers = new Set(allTasks.map(task => task.users?.username)).size;
+    const completedTasks = allTasks.filter(task => task.status === '완료').length;
+    const ongoingTasks = allTasks.filter(task => task.status === '진행중').length;
+    const totalTasks = allTasks.length;
+    
+    document.getElementById('totalWorkers').textContent = totalWorkers;
+    document.getElementById('completedTasks').textContent = completedTasks;
+    document.getElementById('ongoingTasks').textContent = ongoingTasks;
+    document.getElementById('totalTasks').textContent = totalTasks;
+}
+
+// 필터 적용
+function applyFilters() {
+    const department = document.getElementById('departmentFilter').value;
+    const taskType = document.getElementById('taskTypeFilter').value;
+    const status = document.getElementById('statusFilter').value;
+    const timeFilter = document.getElementById('timeFilter').value;
+    
+    filteredTasks = allTasks.filter(task => {
+        let match = true;
+        
+        if (department && task.users?.departments?.name !== department) {
+            match = false;
+        }
+        
+        if (taskType && task.task_type !== taskType) {
+            match = false;
+        }
+        
+        if (status && task.status !== status) {
+            match = false;
+        }
+        
+        if (timeFilter && task.start_time) {
+            const startHour = parseInt(task.start_time.split(':')[0]);
+            const timeRange = timeFilter.split('-');
+            const startRange = parseInt(timeRange[0]);
+            const endRange = parseInt(timeRange[1]);
+            
+            if (startHour < startRange || startHour >= endRange) {
+                match = false;
+            }
+        }
+        
+        return match;
+    });
+    
+    renderTasks();
+}
+
+// 기간 검색
+function searchByPeriod() {
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    
+    if (!startDate || !endDate) {
+        alert('시작 날짜와 종료 날짜를 모두 입력해주세요.');
+        return;
+    }
+    
+    filteredTasks = allTasks.filter(task => {
+        if (!task.work_date) return false;
+        return task.work_date >= startDate && task.work_date <= endDate;
+    });
+    
+    renderTasks();
+}
+
+// 통계 보기
+function showStatistics() {
+    const departmentStats = {};
+    const taskTypeStats = {};
+    const timeStats = {};
+    
+    allTasks.forEach(task => {
+        // 소속별 통계
+        const deptName = task.users?.departments?.name || '미지정';
+        departmentStats[deptName] = (departmentStats[deptName] || 0) + 1;
+        
+        // 업무 유형별 통계
+        taskTypeStats[task.task_type] = (taskTypeStats[task.task_type] || 0) + 1;
+        
+        // 시간대별 통계
+        if (task.start_time) {
+            const hour = parseInt(task.start_time.split(':')[0]);
+            let timeRange = '';
+            if (hour >= 9 && hour < 12) timeRange = '09:00-12:00';
+            else if (hour >= 12 && hour < 15) timeRange = '12:00-15:00';
+            else if (hour >= 15 && hour < 18) timeRange = '15:00-18:00';
+            else if (hour >= 18 && hour < 21) timeRange = '18:00-21:00';
+            else timeRange = '기타';
+            
+            timeStats[timeRange] = (timeStats[timeRange] || 0) + 1;
+        }
+    });
+    
+    // 통계 표시
+    document.getElementById('departmentStats').innerHTML = Object.entries(departmentStats)
+        .map(([dept, count]) => `<div class="mb-2"><strong>${dept}:</strong> ${count}건</div>`)
+        .join('');
+    
+    document.getElementById('taskTypeStats').innerHTML = Object.entries(taskTypeStats)
+        .map(([type, count]) => `<div class="mb-2"><strong>${type}:</strong> ${count}건</div>`)
+        .join('');
+    
+    document.getElementById('timeStats').innerHTML = Object.entries(timeStats)
+        .map(([time, count]) => `<div class="mb-2"><strong>${time}:</strong> ${count}건</div>`)
+        .join('');
+    
+    new bootstrap.Modal(document.getElementById('statisticsModal')).show();
+}
+
+// 엑셀 다운로드
+function exportToExcel() {
+    const csvContent = "data:text/csv;charset=utf-8," 
+        + "소속,작업자,업무유형,상태,시작시간,종료시간,작업일자\n"
+        + filteredTasks.map(task => 
+            `${task.users?.departments?.name || '미지정'},${task.users?.username || 'Unknown'},${task.task_type},${task.status},${task.start_time},${task.end_time || ''},${task.work_date || ''}`
+        ).join("\n");
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "업무목록.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+</script>
 {% endblock %} 

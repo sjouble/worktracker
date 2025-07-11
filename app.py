@@ -801,6 +801,61 @@ def delete_user(user_id):
         logger.error(f"사용자 삭제 에러: {e}")
         return jsonify({'error': '사용자 삭제에 실패했습니다.'}), 500
 
+# 관리자용 업무 목록 API
+@app.route('/api/admin/tasks', methods=['GET'])
+def get_admin_tasks():
+    if 'user' not in session:
+        return jsonify({'error': '로그인이 필요합니다.'}), 401
+    
+    # 관리자 권한 확인
+    username = session['user']['username']
+    if username != 'admin':
+        try:
+            user_info = supabase.table('users').select('*').eq('id', session['user']['id']).execute()
+            if not user_info.data or user_info.data[0]['role'] != 'admin':
+                return jsonify({'error': '관리자 권한이 필요합니다.'}), 403
+        except:
+            return jsonify({'error': '관리자 권한이 필요합니다.'}), 403
+    
+    if not supabase:
+        return jsonify({'error': '데이터베이스 연결에 문제가 있습니다.'}), 500
+    
+    try:
+        # 필터 파라미터 처리
+        department = request.args.get('department')
+        task_type = request.args.get('task_type')
+        status = request.args.get('status')
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        time_range = request.args.get('time_range')
+        
+        # 기본 쿼리 (모든 업무)
+        query = supabase.table('work_logs').select('*, users(username, departments(name))')
+        
+        # 필터 적용
+        if department:
+            query = query.eq('users.departments.name', department)
+        if task_type:
+            query = query.eq('task_type', task_type)
+        if status:
+            query = query.eq('status', status)
+        if start_date and end_date:
+            query = query.gte('work_date', start_date).lte('work_date', end_date)
+        elif start_date:
+            query = query.gte('work_date', start_date)
+        elif end_date:
+            query = query.lte('work_date', end_date)
+        
+        # 정렬 (최신순)
+        query = query.order('created_at', desc=True)
+        
+        result = query.execute()
+        return jsonify(result.data)
+        
+    except Exception as e:
+        logger.error(f"관리자 업무 목록 조회 에러: {e}")
+        return jsonify({'error': '업무 목록 조회에 실패했습니다.'}), 500
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False) 
