@@ -323,6 +323,103 @@ def create_task():
         logger.error(f"업무 등록 에러: {e}")
         return jsonify({'error': '업무 등록에 실패했습니다.'}), 500
 
+@app.route('/api/tasks/<task_id>', methods=['GET'])
+def get_task(task_id):
+    if 'user' not in session:
+        return jsonify({'error': '로그인이 필요합니다.'}), 401
+    
+    user_id = session['user']['id']
+    
+    if not supabase:
+        return jsonify({'error': '데이터베이스 연결에 문제가 있습니다.'}), 500
+    
+    try:
+        # 업무 존재 및 권한 확인
+        task_result = supabase.table('work_logs').select('*').eq('id', task_id).eq('user_id', user_id).execute()
+        
+        if not task_result.data:
+            return jsonify({'error': '업무를 찾을 수 없거나 권한이 없습니다.'}), 404
+        
+        return jsonify(task_result.data[0])
+        
+    except Exception as e:
+        logger.error(f"업무 조회 에러: {e}")
+        return jsonify({'error': '업무 조회에 실패했습니다.'}), 500
+
+@app.route('/api/tasks/<task_id>', methods=['PUT'])
+def update_task(task_id):
+    if 'user' not in session:
+        return jsonify({'error': '로그인이 필요합니다.'}), 401
+    
+    user_id = session['user']['id']
+    
+    if not supabase:
+        return jsonify({'error': '데이터베이스 연결에 문제가 있습니다.'}), 500
+    
+    try:
+        data = request.get_json()
+        
+        # 필수 필드 검증
+        required_fields = ['work_date', 'start_time', 'task_type']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({'error': f'{field} 필드가 필요합니다.'}), 400
+        
+        # 업무 존재 및 권한 확인
+        task_result = supabase.table('work_logs').select('*').eq('id', task_id).eq('user_id', user_id).execute()
+        
+        if not task_result.data:
+            return jsonify({'error': '업무를 찾을 수 없거나 권한이 없습니다.'}), 404
+        
+        # 업무 수정
+        update_data = {
+            'work_date': data['work_date'],
+            'start_time': data['start_time'],
+            'task_type': data['task_type'],
+            'description': data.get('description', ''),
+            'updated_at': datetime.now().isoformat()
+        }
+        
+        result = supabase.table('work_logs').update(update_data).eq('id', task_id).execute()
+        
+        if result.data:
+            return jsonify(result.data[0])
+        else:
+            return jsonify({'error': '업무 수정에 실패했습니다.'}), 500
+            
+    except Exception as e:
+        logger.error(f"업무 수정 에러: {e}")
+        return jsonify({'error': '업무 수정에 실패했습니다.'}), 500
+
+@app.route('/api/tasks/<task_id>', methods=['DELETE'])
+def delete_task(task_id):
+    if 'user' not in session:
+        return jsonify({'error': '로그인이 필요합니다.'}), 401
+    
+    user_id = session['user']['id']
+    
+    if not supabase:
+        return jsonify({'error': '데이터베이스 연결에 문제가 있습니다.'}), 500
+    
+    try:
+        # 업무 존재 및 권한 확인
+        task_result = supabase.table('work_logs').select('*').eq('id', task_id).eq('user_id', user_id).execute()
+        
+        if not task_result.data:
+            return jsonify({'error': '업무를 찾을 수 없거나 권한이 없습니다.'}), 404
+        
+        # 업무 삭제
+        result = supabase.table('work_logs').delete().eq('id', task_id).execute()
+        
+        if result.data:
+            return jsonify({'message': '업무가 삭제되었습니다.'})
+        else:
+            return jsonify({'error': '업무 삭제에 실패했습니다.'}), 500
+            
+    except Exception as e:
+        logger.error(f"업무 삭제 에러: {e}")
+        return jsonify({'error': '업무 삭제에 실패했습니다.'}), 500
+
 @app.route('/api/tasks/<task_id>/complete', methods=['PUT'])
 def complete_task(task_id):
     if 'user' not in session:

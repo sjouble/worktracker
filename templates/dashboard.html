@@ -15,13 +15,14 @@
             </div>
         </div>
         
-        <!-- 업무 시작 섹션 -->
+        <!-- 업무 시작/수정 섹션 -->
         <div class="card mb-4">
             <div class="card-header">
-                <h5 class="mb-0">새 업무 시작</h5>
+                <h5 class="mb-0" id="taskFormTitle">새 업무 시작</h5>
             </div>
             <div class="card-body">
                 <form id="taskForm">
+                    <input type="hidden" id="editTaskId">
                     <div class="row">
                         <div class="col-md-3">
                             <div class="mb-3">
@@ -59,7 +60,10 @@
                             </div>
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-primary">업무 시작</button>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary" id="submitBtn">업무 시작</button>
+                        <button type="button" class="btn btn-secondary" id="cancelEditBtn" style="display: none;" onclick="cancelEdit()">취소</button>
+                    </div>
                 </form>
             </div>
         </div>
@@ -166,6 +170,7 @@
                                 <th>종료 시간</th>
                                 <th>소요 시간</th>
                                 <th>완료 내용</th>
+                                <th>작업</th>
                             </tr>
                         </thead>
                         <tbody id="completedTasks">
@@ -218,10 +223,11 @@ document.addEventListener('DOMContentLoaded', function() {
     loadTasks();
 });
 
-// 업무 시작
+// 업무 시작/수정
 document.getElementById('taskForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     
+    const editTaskId = document.getElementById('editTaskId').value;
     const workDate = document.getElementById('workDate').value;
     const startTime = document.getElementById('startTime').value;
     const taskType = document.getElementById('taskType').value;
@@ -233,8 +239,11 @@ document.getElementById('taskForm').addEventListener('submit', async function(e)
     }
     
     try {
-        const response = await fetch('/api/tasks', {
-            method: 'POST',
+        const url = editTaskId ? `/api/tasks/${editTaskId}` : '/api/tasks';
+        const method = editTaskId ? 'PUT' : 'POST';
+        
+        const response = await fetch(url, {
+            method: method,
             headers: {
                 'Content-Type': 'application/json',
             },
@@ -248,22 +257,15 @@ document.getElementById('taskForm').addEventListener('submit', async function(e)
         });
         
         if (response.ok) {
-            document.getElementById('taskForm').reset();
-            // 기본값 다시 설정
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('workDate').value = today;
-            const now = new Date();
-            const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-            document.getElementById('startTime').value = currentTime;
-            
+            resetForm();
             loadTasks();
-            alert('업무가 시작되었습니다.');
+            alert(editTaskId ? '업무가 수정되었습니다.' : '업무가 시작되었습니다.');
         } else {
             const error = await response.json();
-            alert(error.error || '업무 시작에 실패했습니다.');
+            alert(error.error || (editTaskId ? '업무 수정에 실패했습니다.' : '업무 시작에 실패했습니다.'));
         }
     } catch (error) {
-        alert('업무 시작 중 오류가 발생했습니다.');
+        alert('업무 처리 중 오류가 발생했습니다.');
     }
 });
 
@@ -339,7 +341,7 @@ async function loadTasks() {
             currentTasks.forEach(task => {
                 const startTime = task.start_time;
                 currentTasksHTML += `
-                    <div class="card mb-2 current-task-card">
+                    <div class="card mb-2 current-task-card" style="cursor: pointer;" onclick="editTask(${task.id})">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
@@ -347,7 +349,9 @@ async function loadTasks() {
                                     <p class="card-text">${task.description || '내용 없음'}</p>
                                     <small class="text-muted">날짜: ${task.work_date} | 시작 시간: ${startTime}</small>
                                 </div>
-                                <button class="btn btn-success" onclick="showCompleteForm(${task.id})">완료</button>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-success" onclick="event.stopPropagation(); showCompleteForm(${task.id})">완료</button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -361,7 +365,7 @@ async function loadTasks() {
         const completedTasksTbody = document.getElementById('completedTasks');
         
         if (completedTasks.length === 0) {
-            completedTasksTbody.innerHTML = '<tr><td colspan="7" class="text-center empty-state"><i class="fas fa-check-circle"></i><p>완료된 업무가 없습니다.</p></td></tr>';
+            completedTasksTbody.innerHTML = '<tr><td colspan="8" class="text-center empty-state"><i class="fas fa-check-circle"></i><p>완료된 업무가 없습니다.</p></td></tr>';
         } else {
             let completedTasksHTML = '';
             completedTasks.forEach(task => {
@@ -376,6 +380,12 @@ async function loadTasks() {
                         <td>${task.end_time}</td>
                         <td class="duration-cell">${duration}</td>
                         <td>${task.complete_description || '-'}</td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                <button class="btn btn-sm btn-outline-primary" onclick="editCompletedTask(${task.id})">수정</button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteTask(${task.id})">삭제</button>
+                            </div>
+                        </td>
                     </tr>
                 `;
             });
@@ -403,6 +413,108 @@ function showCompleteForm(taskId) {
 function cancelComplete() {
     document.getElementById('completeTaskCard').style.display = 'none';
     document.getElementById('completeTaskForm').reset();
+}
+
+// 폼 초기화
+function resetForm() {
+    document.getElementById('taskForm').reset();
+    document.getElementById('editTaskId').value = '';
+    document.getElementById('taskFormTitle').textContent = '새 업무 시작';
+    document.getElementById('submitBtn').textContent = '업무 시작';
+    document.getElementById('cancelEditBtn').style.display = 'none';
+    
+    // 기본값 다시 설정
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('workDate').value = today;
+    const now = new Date();
+    const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+    document.getElementById('startTime').value = currentTime;
+}
+
+// 수정 모드 취소
+function cancelEdit() {
+    resetForm();
+}
+
+// 진행중인 업무 수정
+async function editTask(taskId) {
+    try {
+        const response = await fetch(`/api/tasks/${taskId}`);
+        if (response.ok) {
+            const task = await response.json();
+            
+            // 폼에 데이터 채우기
+            document.getElementById('editTaskId').value = task.id;
+            document.getElementById('workDate').value = task.work_date;
+            document.getElementById('startTime').value = task.start_time;
+            document.getElementById('taskType').value = task.task_type;
+            document.getElementById('description').value = task.description || '';
+            
+            // UI 변경
+            document.getElementById('taskFormTitle').textContent = '업무 수정';
+            document.getElementById('submitBtn').textContent = '수정';
+            document.getElementById('cancelEditBtn').style.display = 'inline-block';
+            
+            // 폼으로 스크롤
+            document.getElementById('taskForm').scrollIntoView({ behavior: 'smooth' });
+        } else {
+            alert('업무 정보를 불러오는데 실패했습니다.');
+        }
+    } catch (error) {
+        alert('업무 정보를 불러오는 중 오류가 발생했습니다.');
+    }
+}
+
+// 완료된 업무 수정
+async function editCompletedTask(taskId) {
+    try {
+        const response = await fetch(`/api/tasks/${taskId}`);
+        if (response.ok) {
+            const task = await response.json();
+            
+            // 폼에 데이터 채우기
+            document.getElementById('editTaskId').value = task.id;
+            document.getElementById('workDate').value = task.work_date;
+            document.getElementById('startTime').value = task.start_time;
+            document.getElementById('taskType').value = task.task_type;
+            document.getElementById('description').value = task.description || '';
+            
+            // UI 변경
+            document.getElementById('taskFormTitle').textContent = '업무 수정';
+            document.getElementById('submitBtn').textContent = '수정';
+            document.getElementById('cancelEditBtn').style.display = 'inline-block';
+            
+            // 폼으로 스크롤
+            document.getElementById('taskForm').scrollIntoView({ behavior: 'smooth' });
+        } else {
+            alert('업무 정보를 불러오는데 실패했습니다.');
+        }
+    } catch (error) {
+        alert('업무 정보를 불러오는 중 오류가 발생했습니다.');
+    }
+}
+
+// 업무 삭제
+async function deleteTask(taskId) {
+    if (!confirm('정말로 이 업무를 삭제하시겠습니까?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/tasks/${taskId}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            loadTasks();
+            alert('업무가 삭제되었습니다.');
+        } else {
+            const error = await response.json();
+            alert(error.error || '업무 삭제에 실패했습니다.');
+        }
+    } catch (error) {
+        alert('업무 삭제 중 오류가 발생했습니다.');
+    }
 }
 
 // 소요 시간 계산
