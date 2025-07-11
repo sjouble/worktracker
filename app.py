@@ -52,6 +52,22 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
+        # 관리자 로그인 처리
+        if 'admin_login' in request.form:
+            admin_password = request.form['admin_password']
+            
+            if admin_password == '0000':
+                session['user'] = {
+                    'id': 'admin-user-id',
+                    'username': 'admin',
+                    'role': 'admin'
+                }
+                logger.info("관리자 로그인 성공")
+                return redirect(url_for('admin_dashboard'))
+            else:
+                return render_template('login.html', error="관리자 비밀번호가 올바르지 않습니다.")
+        
+        # 일반 사용자 로그인 처리
         username = request.form['username']
         password = request.form['password']
         
