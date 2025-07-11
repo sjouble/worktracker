@@ -44,6 +44,7 @@
         // PWA 설치 상태 확인
         let deferredPrompt;
         let installButton = document.getElementById('installButton');
+        let isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         
         // 서비스 워커 등록
         if ('serviceWorker' in navigator) {
@@ -78,17 +79,45 @@
             }
         }
         
+        // PWA 설치 가능 여부 체크
+        function canInstallPWA() {
+            return 'serviceWorker' in navigator && 
+                   'PushManager' in window && 
+                   deferredPrompt !== null;
+        }
+        
+        // 설치 버튼 업데이트
+        function updateInstallButton() {
+            if (!installButton) return;
+            
+            if (canInstallPWA()) {
+                // 실제 PWA 설치 가능
+                installButton.innerHTML = '<i class="fas fa-download"></i> 앱 설치';
+                installButton.className = 'btn btn-outline-success w-100 mb-2';
+                installButton.onclick = installApp;
+                console.log('실제 PWA 설치 버튼으로 설정');
+            } else {
+                // 설치 안내로 이동
+                installButton.innerHTML = '<i class="fas fa-download"></i> 📱 앱 설치 안내';
+                installButton.className = 'btn btn-outline-info w-100 mb-2';
+                installButton.onclick = function() {
+                    window.location.href = '/install';
+                };
+                console.log('설치 안내 버튼으로 설정');
+            }
+        }
+        
         // PWA 설치 프롬프트 이벤트
         window.addEventListener('beforeinstallprompt', (e) => {
             console.log('beforeinstallprompt 이벤트 발생');
             e.preventDefault();
             deferredPrompt = e;
             
-            // 설치 버튼 표시
+            // 설치 버튼 표시 및 설정
             if (installButton) {
                 installButton.style.display = 'inline-block';
-                installButton.addEventListener('click', installApp);
-                console.log('설치 버튼 표시됨');
+                updateInstallButton(); // 상태에 따라 버튼 업데이트
+                console.log('설치 버튼 표시됨 (beforeinstallprompt)');
             } else {
                 console.log('설치 버튼 요소가 없음');
             }
@@ -97,6 +126,7 @@
         // 앱 설치 함수
         function installApp() {
             if (deferredPrompt) {
+                // 실제 PWA 설치 프롬프트 표시
                 deferredPrompt.prompt();
                 deferredPrompt.userChoice.then((choiceResult) => {
                     if (choiceResult.outcome === 'accepted') {
@@ -110,7 +140,9 @@
                     deferredPrompt = null;
                 });
             } else {
-                console.log('설치 프롬프트가 없습니다');
+                // 설치 프롬프트가 없으면 설치 안내 페이지로 이동
+                console.log('설치 프롬프트가 없어서 설치 안내 페이지로 이동');
+                window.location.href = '/install';
             }
         }
         
@@ -124,24 +156,34 @@
         
         // 페이지 로드 시 설치 버튼 상태 확인
         window.addEventListener('load', () => {
-            // 모바일에서 수동 설치 안내 표시
-            if (/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+            if (isMobile) {
                 console.log('모바일 기기 감지됨');
                 
-                // 모바일 설치 안내 배너 표시 (로그인 페이지 또는 대시보드)
+                // 모바일 설치 안내 배너 표시
                 const mobileBanner = document.getElementById('mobileInstallBanner');
                 if (mobileBanner) {
                     mobileBanner.style.display = 'block';
                 }
                 
                 if (installButton) {
-                    // 모바일에서는 항상 설치 안내 버튼 표시
+                    // 모바일에서는 설치 버튼을 항상 표시
                     installButton.style.display = 'inline-block';
-                    installButton.innerHTML = '<i class="fas fa-download"></i> 📱 앱 설치 안내';
-                    installButton.onclick = function() {
-                        window.location.href = '/install';
-                    };
+                    
+                    // deferredPrompt가 있으면 실제 설치, 없으면 안내 페이지로
+                    if (deferredPrompt) {
+                        updateInstallButton(); // 상태에 따라 버튼 업데이트
+                    } else {
+                        updateInstallButton(); // 상태에 따라 버튼 업데이트
+                    }
                 }
+            }
+        });
+        
+        // DOMContentLoaded 이벤트에서도 설치 버튼 설정
+        document.addEventListener('DOMContentLoaded', () => {
+            if (isMobile && installButton) {
+                // 초기에는 설치 안내로 설정
+                updateInstallButton(); // 상태에 따라 버튼 업데이트
             }
         });
     </script>
