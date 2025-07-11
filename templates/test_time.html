@@ -84,20 +84,31 @@
     <script>
         // 한국 시간대 함수들
         function getKoreanTime() {
-            const now = new Date();
-            return new Date(now.toLocaleString("en-US", {timeZone: "Asia/Seoul"}));
-        }
+    const now = new Date();
+    const koreanTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Seoul"}));
+    return koreanTime;
+}
 
         function getKoreanDateString() {
-            const koreanTime = getKoreanTime();
-            return koreanTime.toISOString().split('T')[0];
-        }
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Seoul',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    });
+    return formatter.format(now);
+}
 
         function getKoreanTimeString() {
-            const koreanTime = getKoreanTime();
-            return koreanTime.getHours().toString().padStart(2, '0') + ':' + 
-                   koreanTime.getMinutes().toString().padStart(2, '0') + ':' + 
-                   koreanTime.getSeconds().toString().padStart(2, '0');
+            const now = new Date();
+            const formatter = new Intl.DateTimeFormat('en-US', {
+                timeZone: 'Asia/Seoul',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            });
+            return formatter.format(now);
         }
 
         function updateTimes() {
@@ -108,9 +119,24 @@
             document.getElementById('browserDate').textContent = now.toLocaleDateString('ko-KR');
             
             // 한국 시간
-            const koreanTime = getKoreanTime();
-            document.getElementById('koreanTime').textContent = koreanTime.toLocaleTimeString('ko-KR');
-            document.getElementById('koreanDate').textContent = koreanTime.toLocaleDateString('ko-KR');
+            const koreanTimeFormatter = new Intl.DateTimeFormat('ko-KR', {
+                timeZone: 'Asia/Seoul',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            });
+            const koreanDateFormatter = new Intl.DateTimeFormat('ko-KR', {
+                timeZone: 'Asia/Seoul',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            });
+            document.getElementById('koreanTime').textContent = koreanTimeFormatter.format(now);
+            document.getElementById('koreanDate').textContent = koreanDateFormatter.format(now);
             
             // UTC 시간
             document.getElementById('utcTime').textContent = now.toUTCString();
@@ -122,7 +148,7 @@
             
             // 입력 필드 설정
             document.getElementById('testDate').value = getKoreanDateString();
-            document.getElementById('testTime').value = getKoreanTimeString().substring(0, 5);
+            document.getElementById('testTime').value = getKoreanTimeString();
         }
 
         // 페이지 로드 시 시간 업데이트

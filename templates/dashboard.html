@@ -267,17 +267,30 @@
 // 한국 시간대 함수
 function getKoreanTime() {
     const now = new Date();
-    return new Date(now.toLocaleString("en-US", {timeZone: "Asia/Seoul"}));
+    const koreanTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Seoul"}));
+    return koreanTime;
 }
 
 function getKoreanDateString() {
-    const koreanTime = getKoreanTime();
-    return koreanTime.toISOString().split('T')[0];
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Seoul',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    });
+    return formatter.format(now);
 }
 
 function getKoreanTimeString() {
-    const koreanTime = getKoreanTime();
-    return koreanTime.getHours().toString().padStart(2, '0') + ':' + koreanTime.getMinutes().toString().padStart(2, '0');
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Asia/Seoul',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+    });
+    return formatter.format(now);
 }
 
 // 페이지 로드 시 초기화
