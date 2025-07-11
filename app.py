@@ -487,6 +487,185 @@ def complete_task(task_id):
         logger.error(f"업무 완료 처리 에러: {e}")
         return jsonify({'error': '업무 완료 처리에 실패했습니다.'}), 500
 
+# 관리자용 API 엔드포인트들
+@app.route('/api/users', methods=['GET'])
+def get_users():
+    if 'user' not in session:
+        return jsonify({'error': '로그인이 필요합니다.'}), 401
+    
+    # 관리자 권한 확인
+    username = session['user']['username']
+    if username != 'admin':
+        try:
+            user_info = supabase.table('users').select('*').eq('id', session['user']['id']).execute()
+            if not user_info.data or user_info.data[0]['role'] != 'admin':
+                return jsonify({'error': '관리자 권한이 필요합니다.'}), 403
+        except:
+            return jsonify({'error': '관리자 권한이 필요합니다.'}), 403
+    
+    if not supabase:
+        return jsonify({'error': '데이터베이스 연결에 문제가 있습니다.'}), 500
+    
+    try:
+        # 사용자 목록 조회 (소속 정보 포함)
+        users = supabase.table('users').select('*, departments(name)').execute().data
+        
+        # 응답 데이터 형식 변환
+        user_list = []
+        for user in users:
+            user_data = {
+                'id': user['id'],
+                'username': user['username'],
+                'role': user.get('role', 'user'),
+                'department_id': user.get('department_id'),
+                'department_name': user['departments']['name'] if user['departments'] else None,
+                'created_at': user['created_at']
+            }
+            user_list.append(user_data)
+        
+        return jsonify(user_list)
+        
+    except Exception as e:
+        logger.error(f"사용자 목록 조회 에러: {e}")
+        return jsonify({'error': '사용자 목록 조회에 실패했습니다.'}), 500
+
+@app.route('/api/departments', methods=['GET'])
+def get_departments():
+    if 'user' not in session:
+        return jsonify({'error': '로그인이 필요합니다.'}), 401
+    
+    # 관리자 권한 확인
+    username = session['user']['username']
+    if username != 'admin':
+        try:
+            user_info = supabase.table('users').select('*').eq('id', session['user']['id']).execute()
+            if not user_info.data or user_info.data[0]['role'] != 'admin':
+                return jsonify({'error': '관리자 권한이 필요합니다.'}), 403
+        except:
+            return jsonify({'error': '관리자 권한이 필요합니다.'}), 403
+    
+    if not supabase:
+        return jsonify({'error': '데이터베이스 연결에 문제가 있습니다.'}), 500
+    
+    try:
+        # 소속 목록 조회
+        departments = supabase.table('departments').select('*').order('created_at', desc=True).execute().data
+        return jsonify(departments)
+        
+    except Exception as e:
+        logger.error(f"소속 목록 조회 에러: {e}")
+        return jsonify({'error': '소속 목록 조회에 실패했습니다.'}), 500
+
+@app.route('/api/departments', methods=['POST'])
+def create_department():
+    if 'user' not in session:
+        return jsonify({'error': '로그인이 필요합니다.'}), 401
+    
+    # 관리자 권한 확인
+    username = session['user']['username']
+    if username != 'admin':
+        try:
+            user_info = supabase.table('users').select('*').eq('id', session['user']['id']).execute()
+            if not user_info.data or user_info.data[0]['role'] != 'admin':
+                return jsonify({'error': '관리자 권한이 필요합니다.'}), 403
+        except:
+            return jsonify({'error': '관리자 권한이 필요합니다.'}), 403
+    
+    if not supabase:
+        return jsonify({'error': '데이터베이스 연결에 문제가 있습니다.'}), 500
+    
+    try:
+        data = request.get_json()
+        name = data.get('name')
+        
+        if not name:
+            return jsonify({'error': '소속명이 필요합니다.'}), 400
+        
+        # 소속 생성
+        department_data = {
+            'name': name,
+            'created_at': datetime.now().isoformat()
+        }
+        
+        result = supabase.table('departments').insert(department_data).execute()
+        
+        if result.data:
+            return jsonify(result.data[0]), 201
+        else:
+            return jsonify({'error': '소속 생성에 실패했습니다.'}), 500
+            
+    except Exception as e:
+        logger.error(f"소속 생성 에러: {e}")
+        return jsonify({'error': '소속 생성에 실패했습니다.'}), 500
+
+@app.route('/api/departments/<dept_id>', methods=['PUT'])
+def update_department(dept_id):
+    if 'user' not in session:
+        return jsonify({'error': '로그인이 필요합니다.'}), 401
+    
+    # 관리자 권한 확인
+    username = session['user']['username']
+    if username != 'admin':
+        try:
+            user_info = supabase.table('users').select('*').eq('id', session['user']['id']).execute()
+            if not user_info.data or user_info.data[0]['role'] != 'admin':
+                return jsonify({'error': '관리자 권한이 필요합니다.'}), 403
+        except:
+            return jsonify({'error': '관리자 권한이 필요합니다.'}), 403
+    
+    if not supabase:
+        return jsonify({'error': '데이터베이스 연결에 문제가 있습니다.'}), 500
+    
+    try:
+        data = request.get_json()
+        name = data.get('name')
+        
+        if not name:
+            return jsonify({'error': '소속명이 필요합니다.'}), 400
+        
+        # 소속 수정
+        result = supabase.table('departments').update({'name': name}).eq('id', dept_id).execute()
+        
+        if result.data:
+            return jsonify(result.data[0])
+        else:
+            return jsonify({'error': '소속 수정에 실패했습니다.'}), 500
+            
+    except Exception as e:
+        logger.error(f"소속 수정 에러: {e}")
+        return jsonify({'error': '소속 수정에 실패했습니다.'}), 500
+
+@app.route('/api/departments/<dept_id>', methods=['DELETE'])
+def delete_department(dept_id):
+    if 'user' not in session:
+        return jsonify({'error': '로그인이 필요합니다.'}), 401
+    
+    # 관리자 권한 확인
+    username = session['user']['username']
+    if username != 'admin':
+        try:
+            user_info = supabase.table('users').select('*').eq('id', session['user']['id']).execute()
+            if not user_info.data or user_info.data[0]['role'] != 'admin':
+                return jsonify({'error': '관리자 권한이 필요합니다.'}), 403
+        except:
+            return jsonify({'error': '관리자 권한이 필요합니다.'}), 403
+    
+    if not supabase:
+        return jsonify({'error': '데이터베이스 연결에 문제가 있습니다.'}), 500
+    
+    try:
+        # 소속 삭제
+        result = supabase.table('departments').delete().eq('id', dept_id).execute()
+        
+        if result.data:
+            return jsonify({'message': '소속이 삭제되었습니다.'})
+        else:
+            return jsonify({'error': '소속 삭제에 실패했습니다.'}), 500
+            
+    except Exception as e:
+        logger.error(f"소속 삭제 에러: {e}")
+        return jsonify({'error': '소속 삭제에 실패했습니다.'}), 500
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False) 
