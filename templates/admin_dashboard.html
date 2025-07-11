@@ -27,22 +27,22 @@
                     <table class="table table-striped">
                         <thead>
                             <tr>
-                                <th>사용자</th>
+                                <th>소속</th>
+                                <th>작업자</th>
                                 <th>업무 유형</th>
-                                <th>설명</th>
                                 <th>상태</th>
                                 <th>시작 시간</th>
                                 <th>종료 시간</th>
-                                <th>생성일</th>
+                                <th>작업일자</th>
                                 <th>관리</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for task in tasks %}
                             <tr>
+                                <td>{{ task.users.departments.name if task.users and task.users.departments else '미지정' }}</td>
                                 <td>{{ task.users.username if task.users else 'Unknown' }}</td>
                                 <td>{{ task.task_type }}</td>
-                                <td>{{ task.description or '내용 없음' }}</td>
                                 <td>
                                     <span class="badge {% if task.status == '완료' %}bg-success{% else %}bg-warning{% endif %}">
                                         {{ task.status }}
@@ -50,7 +50,7 @@
                                 </td>
                                 <td>{{ task.start_time }}</td>
                                 <td>{{ task.end_time or '-' }}</td>
-                                <td>{{ task.created_at[:10] if task.created_at else '-' }}</td>
+                                <td>{{ task.work_date if task.work_date else '-' }}</td>
                                 <td>
                                     <button class="btn btn-sm btn-outline-primary">수정</button>
                                     <button class="btn btn-sm btn-outline-danger">삭제</button>

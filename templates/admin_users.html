@@ -7,8 +7,8 @@
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <h2>사용자 관리</h2>
-                <p class="text-muted">전체 사용자 목록을 관리할 수 있습니다.</p>
+                <h2>작업자 관리</h2>
+                <p class="text-muted">전체 작업자 목록을 관리할 수 있습니다.</p>
             </div>
             <div class="d-flex gap-2">
                 <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary">대시보드</a>
@@ -20,14 +20,14 @@
         <!-- 사용자 목록 -->
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">전체 사용자 목록</h5>
+                <h5 class="mb-0">전체 작업자 목록</h5>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
                     <table class="table table-striped" id="usersTable">
                         <thead>
                             <tr>
-                                <th>사용자명</th>
+                                <th>작업자명</th>
                                 <th>소속</th>
                                 <th>가입일</th>
                                 <th>관리</th>
@@ -48,7 +48,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">사용자 소속 변경</h5>
+                <h5 class="modal-title">작업자 소속 변경</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -78,7 +78,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p>정말로 <strong id="resetUserName"></strong> 사용자의 비밀번호를 초기화하시겠습니까?</p>
+                <p>정말로 <strong id="resetUserName"></strong> 작업자의 비밀번호를 초기화하시겠습니까?</p>
                 <p class="text-muted">초기화된 비밀번호는 <strong>1234</strong>로 설정됩니다.</p>
             </div>
             <div class="modal-footer">
@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadUsers();
 });
 
-// 사용자 목록 불러오기
+// 작업자 목록 불러오기
 async function loadUsers() {
     try {
         const response = await fetch('/api/users');
@@ -125,11 +125,11 @@ async function loadUsers() {
             tbody.innerHTML += row;
         });
     } catch (error) {
-        console.error('사용자 목록 불러오기 실패:', error);
+        console.error('작업자 목록 불러오기 실패:', error);
     }
 }
 
-// 사용자 소속 변경 모달 열기
+// 작업자 소속 변경 모달 열기
 async function changeUserDepartment(userId, username, currentDepartmentId) {
     currentUserId = userId;
     
@@ -156,7 +156,7 @@ async function changeUserDepartment(userId, username, currentDepartmentId) {
     }
 }
 
-// 사용자 소속 업데이트
+// 작업자 소속 업데이트
 async function updateUserDepartment() {
     const departmentId = document.getElementById('userDepartmentSelect').value;
     if (!departmentId) {
@@ -176,13 +176,13 @@ async function updateUserDepartment() {
         if (response.ok) {
             bootstrap.Modal.getInstance(document.getElementById('userDepartmentModal')).hide();
             loadUsers();
-            alert('사용자 소속이 변경되었습니다.');
+            alert('작업자 소속이 변경되었습니다.');
         } else {
             const error = await response.json();
-            alert(error.error || '사용자 소속 변경에 실패했습니다.');
+            alert(error.error || '작업자 소속 변경에 실패했습니다.');
         }
     } catch (error) {
-        alert('사용자 소속 변경 중 오류가 발생했습니다.');
+        alert('작업자 소속 변경 중 오류가 발생했습니다.');
     }
 }
 
@@ -216,9 +216,9 @@ async function confirmResetPassword() {
     }
 }
 
-// 사용자 삭제
+// 작업자 삭제
 async function deleteUser(userId, username) {
-    if (!confirm(`정말로 ${username} 사용자를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) {
+    if (!confirm(`정말로 ${username} 작업자를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) {
         return;
     }
     
@@ -229,13 +229,13 @@ async function deleteUser(userId, username) {
         
         if (response.ok) {
             loadUsers();
-            alert('사용자가 삭제되었습니다.');
+            alert('작업자가 삭제되었습니다.');
         } else {
             const error = await response.json();
-            alert(error.error || '사용자 삭제에 실패했습니다.');
+            alert(error.error || '작업자 삭제에 실패했습니다.');
         }
     } catch (error) {
-        alert('사용자 삭제 중 오류가 발생했습니다.');
+        alert('작업자 삭제 중 오류가 발생했습니다.');
     }
 }
 </script>

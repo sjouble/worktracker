@@ -234,7 +234,7 @@ def admin_dashboard():
         # 관리자용 데이터 로드
         departments = supabase.table('departments').select('*').execute().data
         users = supabase.table('users').select('*, departments(name)').execute().data
-        work_logs = supabase.table('work_logs').select('*, users(username)').execute().data
+        work_logs = supabase.table('work_logs').select('*, users(username, departments(name))').execute().data
         
         return render_template('admin_dashboard.html', 
                              user={'username': username, 'role': 'admin'},
