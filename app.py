@@ -890,18 +890,18 @@ def get_admin_statistics():
         today_workers = supabase.table('work_logs').select('user_id').eq('work_date', today).execute()
         today_participants = len(set(task['user_id'] for task in today_workers.data))
         
-        # 전체 업무 통계
-        all_tasks = supabase.table('work_logs').select('status').execute()
-        completed_tasks = len([task for task in all_tasks.data if task['status'] == '완료'])
-        ongoing_tasks = len([task for task in all_tasks.data if task['status'] == '진행중'])
-        total_tasks = len(all_tasks.data)
+        # 오늘 업무 통계 (오늘 날짜 기준)
+        today_tasks = supabase.table('work_logs').select('status').eq('work_date', today).execute()
+        today_completed_tasks = len([task for task in today_tasks.data if task['status'] == '완료'])
+        today_ongoing_tasks = len([task for task in today_tasks.data if task['status'] == '진행중'])
+        today_total_tasks = len(today_tasks.data)
         
         statistics = {
             'total_workers': total_workers,
             'today_participants': today_participants,
-            'completed_tasks': completed_tasks,
-            'ongoing_tasks': ongoing_tasks,
-            'total_tasks': total_tasks
+            'completed_tasks': today_completed_tasks,
+            'ongoing_tasks': today_ongoing_tasks,
+            'total_tasks': today_total_tasks
         }
         
         return jsonify(statistics)

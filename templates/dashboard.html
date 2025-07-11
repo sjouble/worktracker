@@ -232,6 +232,37 @@
     </div>
 </div>
 
+<!-- 삭제 확인 모달 -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteConfirmModalLabel">
+                    <i class="fas fa-exclamation-triangle text-danger me-2"></i>업무 삭제 확인
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <h6 class="alert-heading">⚠️ 주의사항</h6>
+                    <p class="mb-2">정말로 이 업무를 삭제하시겠습니까?</p>
+                    <ul class="mb-0">
+                        <li>삭제된 업무는 복구할 수 없습니다.</li>
+                        <li>모든 업무 기록이 영구적으로 삭제됩니다.</li>
+                    </ul>
+                </div>
+                <p class="text-muted small">계속하시려면 아래 "삭제" 버튼을 클릭하세요.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDeleteTask()">
+                    <i class="fas fa-trash me-1"></i>삭제
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 // 페이지 로드 시 초기화
 document.addEventListener('DOMContentLoaded', function() {
@@ -595,40 +626,33 @@ async function saveTaskEdit() {
 
 // 업무 삭제
 async function deleteTask(taskId) {
-    if (!confirm('정말로 이 업무를 삭제하시겠습니까?\n\n삭제된 업무는 복구할 수 없습니다.')) {
-        return;
-    }
+    // 삭제할 업무 ID 저장
+    window.deleteTaskId = taskId;
     
-    try {
-        const response = await fetch(`/api/tasks/${taskId}`, {
-            method: 'DELETE'
-        });
-        
-        if (response.ok) {
-            loadTasks();
-            alert('업무가 삭제되었습니다.');
-        } else {
-            const error = await response.json();
-            alert(error.error || '업무 삭제에 실패했습니다.');
-        }
-    } catch (error) {
-        alert('업무 삭제 중 오류가 발생했습니다.');
-    }
+    // 삭제 확인 모달 표시
+    const deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+    deleteModal.show();
 }
 
 // 모달에서 업무 삭제
 async function deleteTaskFromModal() {
     const taskId = document.getElementById('editTaskId').value;
     
-    // 더 상세한 확인 메시지
-    const confirmMessage = '정말로 이 업무를 삭제하시겠습니까?\n\n' +
-                          '• 삭제된 업무는 복구할 수 없습니다.\n' +
-                          '• 모든 업무 기록이 영구적으로 삭제됩니다.\n\n' +
-                          '계속하시려면 "확인"을 클릭하세요.';
+    // 삭제할 업무 ID 저장
+    window.deleteTaskId = taskId;
     
-    if (!confirm(confirmMessage)) {
-        return;
-    }
+    // 수정 모달 닫기
+    const editModal = bootstrap.Modal.getInstance(document.getElementById('editTaskModal'));
+    editModal.hide();
+    
+    // 삭제 확인 모달 표시
+    const deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+    deleteModal.show();
+}
+
+// 삭제 확인 후 실제 삭제 실행
+async function confirmDeleteTask() {
+    const taskId = window.deleteTaskId;
     
     try {
         const response = await fetch(`/api/tasks/${taskId}`, {
@@ -636,19 +660,61 @@ async function deleteTaskFromModal() {
         });
         
         if (response.ok) {
-            // 모달 닫기
-            const modal = bootstrap.Modal.getInstance(document.getElementById('editTaskModal'));
-            modal.hide();
+            // 삭제 확인 모달 닫기
+            const deleteModal = bootstrap.Modal.getInstance(document.getElementById('deleteConfirmModal'));
+            deleteModal.hide();
             
             loadTasks();
-            alert('업무가 성공적으로 삭제되었습니다.');
+            
+            // 성공 메시지 표시
+            showSuccessMessage('업무가 성공적으로 삭제되었습니다.');
         } else {
             const error = await response.json();
-            alert(error.error || '업무 삭제에 실패했습니다.');
+            showErrorMessage(error.error || '업무 삭제에 실패했습니다.');
         }
     } catch (error) {
-        alert('업무 삭제 중 오류가 발생했습니다.');
+        showErrorMessage('업무 삭제 중 오류가 발생했습니다.');
     }
+}
+
+// 성공 메시지 표시
+function showSuccessMessage(message) {
+    // Bootstrap toast 또는 alert 사용
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-success alert-dismissible fade show position-fixed';
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alertDiv.innerHTML = `
+        <i class="fas fa-check-circle me-2"></i>${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alertDiv);
+    
+    // 3초 후 자동 제거
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 3000);
+}
+
+// 에러 메시지 표시
+function showErrorMessage(message) {
+    // Bootstrap toast 또는 alert 사용
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-danger alert-dismissible fade show position-fixed';
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alertDiv.innerHTML = `
+        <i class="fas fa-exclamation-circle me-2"></i>${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alertDiv);
+    
+    // 5초 후 자동 제거
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
 }
 
 // 소요 시간 계산
