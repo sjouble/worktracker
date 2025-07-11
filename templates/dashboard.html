@@ -10,7 +10,13 @@
                 <h2>안녕하세요, {{ user.username }}님!</h2>
                 <p class="text-muted">소속: {{ user.department_name if user.department_name else '미지정' }}</p>
             </div>
-            <div>
+            <div class="d-flex gap-2">
+                <button id="installButton" class="btn btn-outline-success" style="display: none;">
+                    <i class="fas fa-download"></i> 앱 설치
+                </button>
+                <a href="{{ url_for('install_app') }}" class="btn btn-outline-info">
+                    <i class="fas fa-info-circle"></i> 설치 안내
+                </a>
                 <a href="{{ url_for('logout') }}" class="btn btn-outline-danger">로그아웃</a>
             </div>
         </div>

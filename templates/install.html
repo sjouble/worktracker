@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}앱 설치 - 다이소 안성센터{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card">
+            <div class="card-header text-center">
+                <h4 class="mb-0">📱 WorkTracker 앱 설치</h4>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <div class="app-icon mb-3">
+                        <img src="{{ url_for('static', filename='icons/icon-192x192.png') }}" 
+                             alt="WorkTracker" width="96" height="96" class="rounded-circle">
+                    </div>
+                    <h5>다이소 안성센터 WorkTracker</h5>
+                    <p class="text-muted">업무 관리 시스템을 앱으로 설치하여 더 편리하게 사용하세요!</p>
+                </div>
+
+                <div class="install-instructions">
+                    <h6>📋 설치 방법</h6>
+                    
+                    <!-- Chrome/Edge -->
+                    <div class="browser-install mb-3">
+                        <h6 class="text-primary">🌐 Chrome / Edge 브라우저</h6>
+                        <ol>
+                            <li>브라우저 주소창 오른쪽의 <strong>설치</strong> 버튼을 클릭하세요</li>
+                            <li>또는 <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>I</kbd>를 눌러 개발자 도구를 열고</li>
+                            <li>Application 탭 → Manifest → Install 버튼을 클릭하세요</li>
+                        </ol>
+                    </div>
+
+                    <!-- Safari -->
+                    <div class="browser-install mb-3">
+                        <h6 class="text-primary">🍎 Safari (iOS)</h6>
+                        <ol>
+                            <li>하단의 <strong>공유</strong> 버튼을 탭하세요</li>
+                            <li><strong>홈 화면에 추가</strong>를 선택하세요</li>
+                            <li><strong>추가</strong>를 탭하여 설치를 완료하세요</li>
+                        </ol>
+                    </div>
+
+                    <!-- Samsung Internet -->
+                    <div class="browser-install mb-3">
+                        <h6 class="text-primary">📱 Samsung Internet</h6>
+                        <ol>
+                            <li>메뉴 버튼을 탭하세요</li>
+                            <li><strong>앱 설치</strong>를 선택하세요</li>
+                            <li><strong>설치</strong>를 탭하여 완료하세요</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="app-features mt-4">
+                    <h6>✨ 앱 설치 후 제공되는 기능</h6>
+                    <ul class="list-unstyled">
+                        <li>✅ 브라우저 주소창 없이 앱처럼 사용</li>
+                        <li>✅ 홈 화면에서 바로 접근 가능</li>
+                        <li>✅ 오프라인에서도 기본 기능 사용</li>
+                        <li>✅ 빠른 로딩과 부드러운 사용자 경험</li>
+                        <li>✅ 푸시 알림 지원 (향후 업데이트)</li>
+                    </ul>
+                </div>
+
+                <div class="text-center mt-4">
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
+                        <i class="fas fa-arrow-left"></i> 대시보드로 돌아가기
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.app-icon img {
+    border: 3px solid #0d6efd;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.browser-install {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    border-left: 4px solid #0d6efd;
+}
+
+.browser-install ol {
+    margin-bottom: 0;
+    padding-left: 1.2rem;
+}
+
+.browser-install li {
+    margin-bottom: 0.5rem;
+}
+
+.app-features ul li {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.app-features ul li:last-child {
+    border-bottom: none;
+}
+</style>
+{% endblock %} 

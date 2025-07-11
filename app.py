@@ -701,6 +701,11 @@ def admin_departments():
     
     return render_template('admin_departments.html', user={'username': username, 'role': 'admin'})
 
+@app.route('/install')
+def install_app():
+    """PWA 설치 안내 페이지"""
+    return render_template('install.html')
+
 # 추가 관리자 API 엔드포인트
 @app.route('/api/users/<user_id>/department', methods=['PUT'])
 def update_user_department(user_id):
