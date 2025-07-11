@@ -111,13 +111,12 @@
                     <div class="col-md-3">
                         <div class="mb-3">
                             <label for="timeFilter" class="form-label">시간대 검색</label>
-                            <select class="form-select" id="timeFilter">
-                                <option value="">전체 시간</option>
-                                <option value="09:00-12:00">09:00-12:00</option>
-                                <option value="12:00-15:00">12:00-15:00</option>
-                                <option value="15:00-18:00">15:00-18:00</option>
-                                <option value="18:00-21:00">18:00-21:00</option>
-                            </select>
+                            <div class="input-group">
+                                <input type="time" class="form-control" id="timeFilterStart" placeholder="시작 시간">
+                                <span class="input-group-text">~</span>
+                                <input type="time" class="form-control" id="timeFilterEnd" placeholder="종료 시간">
+                            </div>
+                            <small class="form-text text-muted">예: 09:00 ~ 12:00</small>
                         </div>
                     </div>
                     <div class="col-md-3">
@@ -299,7 +298,8 @@ function applyFilters() {
     const department = document.getElementById('departmentFilter').value;
     const taskType = document.getElementById('taskTypeFilter').value;
     const status = document.getElementById('statusFilter').value;
-    const timeFilter = document.getElementById('timeFilter').value;
+    const timeFilterStart = document.getElementById('timeFilterStart').value;
+    const timeFilterEnd = document.getElementById('timeFilterEnd').value;
     
     filteredTasks = allTasks.filter(task => {
         let match = true;
@@ -316,13 +316,21 @@ function applyFilters() {
             match = false;
         }
         
-        if (timeFilter && task.start_time) {
-            const startHour = parseInt(task.start_time.split(':')[0]);
-            const timeRange = timeFilter.split('-');
-            const startRange = parseInt(timeRange[0]);
-            const endRange = parseInt(timeRange[1]);
+        if (timeFilterStart && timeFilterEnd && task.start_time) {
+            const taskStartHour = parseInt(task.start_time.split(':')[0]);
+            const taskStartMinute = parseInt(task.start_time.split(':')[1]);
+            const filterStartHour = parseInt(timeFilterStart.split(':')[0]);
+            const filterStartMinute = parseInt(timeFilterStart.split(':')[1]);
+            const filterEndHour = parseInt(timeFilterEnd.split(':')[0]);
+            const filterEndMinute = parseInt(timeFilterEnd.split(':')[1]);
             
-            if (startHour < startRange || startHour >= endRange) {
+            // 업무 시작 시간을 분 단위로 변환
+            const taskStartMinutes = taskStartHour * 60 + taskStartMinute;
+            const filterStartMinutes = filterStartHour * 60 + filterStartMinute;
+            const filterEndMinutes = filterEndHour * 60 + filterEndMinute;
+            
+            // 업무 시작 시간이 필터 범위 밖이면 제외
+            if (taskStartMinutes < filterStartMinutes || taskStartMinutes > filterEndMinutes) {
                 match = false;
             }
         }
