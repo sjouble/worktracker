@@ -143,7 +143,7 @@ def register():
                 'id': user_id,
                 'username': username,
                 'password_hash': password,  # 실제로는 해시화해야 함
-                'created_at': datetime.now().isoformat()
+                'created_at': get_korean_datetime().isoformat()
             }
             
             # 소속이 선택된 경우 추가
@@ -262,6 +262,11 @@ def admin_dashboard():
 @app.route('/test')
 def test():
     return jsonify({'message': 'Test endpoint working!', 'status': 'success'})
+
+@app.route('/test_time')
+def test_time():
+    """한국시간대 테스트 페이지"""
+    return render_template('test_time.html')
 
 @app.route('/logout')
 def logout():

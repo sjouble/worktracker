@@ -264,16 +264,30 @@
 </div>
 
 <script>
+// 한국 시간대 함수
+function getKoreanTime() {
+    const now = new Date();
+    return new Date(now.toLocaleString("en-US", {timeZone: "Asia/Seoul"}));
+}
+
+function getKoreanDateString() {
+    const koreanTime = getKoreanTime();
+    return koreanTime.toISOString().split('T')[0];
+}
+
+function getKoreanTimeString() {
+    const koreanTime = getKoreanTime();
+    return koreanTime.getHours().toString().padStart(2, '0') + ':' + koreanTime.getMinutes().toString().padStart(2, '0');
+}
+
 // 페이지 로드 시 초기화
 document.addEventListener('DOMContentLoaded', function() {
     // 오늘 날짜를 기본값으로 설정 (한국 시간 기준)
-    const now = new Date();
-    const koreanTime = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
-    const today = koreanTime.toISOString().split('T')[0];
+    const today = getKoreanDateString();
     document.getElementById('workDate').value = today;
     
     // 현재 시간을 기본값으로 설정 (24시간 형식, 한국 시간 기준)
-    const currentTime = koreanTime.getHours().toString().padStart(2, '0') + ':' + koreanTime.getMinutes().toString().padStart(2, '0');
+    const currentTime = getKoreanTimeString();
     document.getElementById('startTime').value = currentTime;
     
     // 조회 필터 이벤트 리스너
@@ -336,11 +350,9 @@ document.getElementById('taskForm').addEventListener('submit', async function(e)
         if (response.ok) {
             document.getElementById('taskForm').reset();
             // 기본값 다시 설정 (한국 시간 기준)
-            const now = new Date();
-            const koreanTime = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
-            const today = koreanTime.toISOString().split('T')[0];
+            const today = getKoreanDateString();
             document.getElementById('workDate').value = today;
-            const currentTime = koreanTime.getHours().toString().padStart(2, '0') + ':' + koreanTime.getMinutes().toString().padStart(2, '0');
+            const currentTime = getKoreanTimeString();
             document.getElementById('startTime').value = currentTime;
             
             loadTasks();
@@ -415,9 +427,7 @@ async function loadTasks() {
             }
         } else {
             // 오늘 조회 (한국 시간 기준)
-            const now = new Date();
-            const koreanTime = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
-            const today = koreanTime.toISOString().split('T')[0];
+            const today = getKoreanDateString();
             titleText = '오늘 완료된 업무 목록';
         }
         
@@ -513,9 +523,7 @@ function showCompleteForm(taskId) {
     document.getElementById('completeTaskId').value = taskId;
     
     // 현재 시간을 기본값으로 설정 (한국 시간 기준)
-    const now = new Date();
-    const koreanTime = new Date(now.getTime() + (9 * 60 * 60 * 1000)); // UTC+9
-    const currentTime = koreanTime.getHours().toString().padStart(2, '0') + ':' + koreanTime.getMinutes().toString().padStart(2, '0');
+    const currentTime = getKoreanTimeString();
     document.getElementById('endTime').value = currentTime;
     
     document.getElementById('completeTaskCard').style.display = 'block';
