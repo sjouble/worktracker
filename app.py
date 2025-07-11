@@ -303,7 +303,6 @@ def create_task():
         
         # 업무 로그 데이터 생성
         task_data = {
-            'id': str(uuid.uuid4()),
             'user_id': user_id,
             'work_date': data['work_date'],
             'start_time': data['start_time'],

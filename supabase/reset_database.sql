@@ -1,17 +1,17 @@
 -- ========================================
--- WorkTracker 데이터베이스 초기화
+-- WorkTracker 데이터베이스 완전 초기화
+-- 모든 테이블 삭제 후 새로 생성
 -- ========================================
 
--- 기존 테이블 및 정책 삭제 (있다면)
--- 테이블을 먼저 삭제하면 CASCADE로 관련 정책도 함께 삭제됨
+-- 기존 테이블 및 정책 삭제 (CASCADE로 관련 정책도 함께 삭제)
 DROP TABLE IF EXISTS work_logs CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS departments CASCADE;
 
--- 기존 뷰 삭제 (테이블과 독립적)
+-- 기존 뷰 삭제
 DROP VIEW IF EXISTS user_summary;
 
--- 기존 함수 삭제 (테이블과 독립적)
+-- 기존 함수 삭제
 DROP FUNCTION IF EXISTS update_updated_at_column();
 
 -- departments 테이블 생성
@@ -32,9 +32,9 @@ CREATE TABLE users (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- work_logs 테이블 생성
+-- work_logs 테이블 생성 (새로운 스키마)
 CREATE TABLE work_logs (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id SERIAL PRIMARY KEY,
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
     department_id INTEGER REFERENCES departments(id),
     work_date DATE NOT NULL,
@@ -72,7 +72,7 @@ ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE work_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE departments ENABLE ROW LEVEL SECURITY;
 
--- RLS 정책 생성 (세션 기반 인증용)
+-- RLS 정책 생성
 -- departments: 모든 사용자가 읽기 가능
 CREATE POLICY "departments_read_policy" ON departments
     FOR SELECT USING (true);
@@ -131,4 +131,4 @@ LEFT JOIN work_logs wl ON u.id = wl.user_id
 GROUP BY u.id, u.username, u.role, d.name;
 
 -- 완료 메시지
-SELECT '데이터베이스 초기화 완료!' as status; 
+SELECT '데이터베이스 완전 초기화 완료!' as status; 
