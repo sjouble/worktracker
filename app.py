@@ -294,8 +294,8 @@ def get_tasks():
         elif start_date and end_date:
             query = query.gte('work_date', start_date).lte('work_date', end_date)
         else:
-            # 기본값: 오늘 날짜
-            today = date.today().isoformat()
+            # 기본값: 한국 시간 기준 오늘 날짜
+            today = get_korean_date().isoformat()
             query = query.eq('work_date', today)
         
         # 정렬 (최신순)
@@ -725,8 +725,78 @@ def admin_departments():
 
 @app.route('/install')
 def install_app():
-    """PWA 설치 안내 페이지"""
+    """데이터베이스 초기화 페이지"""
     return render_template('install.html')
+
+@app.route('/api/init-database', methods=['POST'])
+def init_database():
+    """데이터베이스 완전 초기화 (KST 시간대 적용)"""
+    if not supabase:
+        return jsonify({'error': '데이터베이스 연결에 문제가 있습니다.'}), 500
+    
+    try:
+        logger.info("🔄 데이터베이스 초기화 시작...")
+        
+        # 1단계: 기존 데이터 삭제
+        try:
+            # work_logs 삭제
+            supabase.table('work_logs').delete().neq('id', 0).execute()
+            logger.info("✅ work_logs 데이터 삭제 완료")
+            
+            # users 삭제 (admin 제외)
+            supabase.table('users').delete().neq('username', 'admin').execute()
+            logger.info("✅ users 데이터 삭제 완료")
+            
+            # departments 삭제
+            supabase.table('departments').delete().neq('id', 0).execute()
+            logger.info("✅ departments 데이터 삭제 완료")
+            
+        except Exception as e:
+            logger.warning(f"기존 데이터 삭제 중 오류 (무시): {e}")
+        
+        # 2단계: 기본 데이터 삽입
+        try:
+            # departments 삽입
+            departments_data = [
+                {'name': 'B동보충'},
+                {'name': 'A지상보충'},
+                {'name': 'A지하보충'}
+            ]
+            
+            for dept in departments_data:
+                supabase.table('departments').insert(dept).execute()
+            logger.info("✅ departments 데이터 삽입 완료")
+            
+            # admin 계정 확인 및 생성
+            admin_check = supabase.table('users').select('*').eq('username', 'admin').execute()
+            if not admin_check.data:
+                admin_data = {
+                    'username': 'admin',
+                    'password_hash': '0000',
+                    'role': 'admin'
+                }
+                supabase.table('users').insert(admin_data).execute()
+                logger.info("✅ admin 계정 생성 완료")
+            else:
+                logger.info("✅ admin 계정 이미 존재")
+            
+            logger.info("✅ 데이터베이스 초기화 완료")
+            return jsonify({
+                'message': '데이터베이스가 성공적으로 초기화되었습니다.',
+                'kst_time': get_korean_datetime().isoformat(),
+                'details': {
+                    'departments_created': len(departments_data),
+                    'admin_account': 'admin/0000'
+                }
+            })
+            
+        except Exception as e:
+            logger.error(f"기본 데이터 삽입 실패: {e}")
+            return jsonify({'error': f'기본 데이터 삽입 실패: {str(e)}'}), 500
+            
+    except Exception as e:
+        logger.error(f"데이터베이스 초기화 실패: {e}")
+        return jsonify({'error': f'데이터베이스 초기화 실패: {str(e)}'}), 500
 
 # 추가 관리자 API 엔드포인트
 @app.route('/api/users/<user_id>/department', methods=['PUT'])

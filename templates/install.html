@@ -1,71 +1,64 @@
 {% extends "base.html" %}
 
-{% block title %}앱 설치 - 다이소 안성센터{% endblock %}
+{% block title %}데이터베이스 초기화 - 다이소 안성센터{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-8 col-lg-6">
         <div class="card">
             <div class="card-header text-center">
-                <h4 class="mb-0">📱 WorkTracker 앱 설치</h4>
+                <h4 class="mb-0">🔧 데이터베이스 초기화</h4>
             </div>
             <div class="card-body">
                 <div class="text-center mb-4">
                     <div class="app-icon mb-3">
-                        <img src="{{ url_for('static', filename='icons/icon-192x192.png') }}" 
-                             alt="WorkTracker" width="96" height="96" class="rounded-circle">
+                        <i class="fas fa-database fa-3x text-primary"></i>
                     </div>
-                    <h5>다이소 안성센터 WorkTracker</h5>
-                    <p class="text-muted">업무 관리 시스템을 앱으로 설치하여 더 편리하게 사용하세요!</p>
+                    <h5>WorkTracker 데이터베이스 설정</h5>
+                    <p class="text-muted">한국시간대(KST) 적용 및 데이터베이스 구조 복원</p>
                 </div>
 
-                <div class="install-instructions">
-                    <h6>📋 설치 방법</h6>
-                    
-                    <!-- Chrome/Edge -->
-                    <div class="browser-install mb-3">
-                        <h6 class="text-primary">🌐 Chrome / Edge 브라우저</h6>
-                        <ol>
-                            <li>브라우저 주소창 오른쪽의 <strong>설치</strong> 버튼을 클릭하세요</li>
-                            <li>또는 <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>I</kbd>를 눌러 개발자 도구를 열고</li>
-                            <li>Application 탭 → Manifest → Install 버튼을 클릭하세요</li>
-                        </ol>
-                    </div>
-
-                    <!-- Safari -->
-                    <div class="browser-install mb-3">
-                        <h6 class="text-primary">🍎 Safari (iOS)</h6>
-                        <ol>
-                            <li>하단의 <strong>공유</strong> 버튼을 탭하세요</li>
-                            <li><strong>홈 화면에 추가</strong>를 선택하세요</li>
-                            <li><strong>추가</strong>를 탭하여 설치를 완료하세요</li>
-                        </ol>
-                    </div>
-
-                    <!-- Samsung Internet -->
-                    <div class="browser-install mb-3">
-                        <h6 class="text-primary">📱 Samsung Internet</h6>
-                        <ol>
-                            <li>메뉴 버튼을 탭하세요</li>
-                            <li><strong>앱 설치</strong>를 선택하세요</li>
-                            <li><strong>설치</strong>를 탭하여 완료하세요</li>
-                        </ol>
-                    </div>
-                </div>
-
-                <div class="app-features mt-4">
-                    <h6>✨ 앱 설치 후 제공되는 기능</h6>
-                    <ul class="list-unstyled">
-                        <li>✅ 브라우저 주소창 없이 앱처럼 사용</li>
-                        <li>✅ 홈 화면에서 바로 접근 가능</li>
-                        <li>✅ 오프라인에서도 기본 기능 사용</li>
-                        <li>✅ 빠른 로딩과 부드러운 사용자 경험</li>
-                        <li>✅ 푸시 알림 지원 (향후 업데이트)</li>
+                <div class="alert alert-warning">
+                    <h6>⚠️ 주의사항</h6>
+                    <ul class="mb-0">
+                        <li>이 작업은 기존 데이터를 모두 삭제합니다</li>
+                        <li>초기화 후에는 기본 관리자 계정만 생성됩니다</li>
+                        <li>한국시간대(KST) 설정이 적용됩니다</li>
                     </ul>
                 </div>
 
+                <div class="database-info mb-4">
+                    <h6>📊 초기화 내용</h6>
+                    <ul class="list-unstyled">
+                        <li>✅ 모든 테이블, 함수, 트리거 삭제</li>
+                        <li>✅ 한국시간대(KST) 적용된 새 구조 생성</li>
+                        <li>✅ 기본 소속 데이터 생성 (B동보충, A지상보충, A지하보충)</li>
+                        <li>✅ 관리자 계정 생성 (admin / 0000)</li>
+                        <li>✅ Row Level Security (RLS) 설정</li>
+                        <li>✅ 인덱스 및 뷰 생성</li>
+                    </ul>
+                </div>
+
+                <div class="text-center">
+                    <button id="initDbBtn" class="btn btn-danger btn-lg" onclick="initializeDatabase()">
+                        <i class="fas fa-database"></i> 데이터베이스 초기화 실행
+                    </button>
+                </div>
+
+                <div id="initProgress" class="mt-4" style="display: none;">
+                    <div class="progress mb-3">
+                        <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <div id="progressText" class="text-center text-muted">초기화 진행 중...</div>
+                </div>
+
+                <div id="initResult" class="mt-4" style="display: none;">
+                    <div id="resultMessage" class="alert"></div>
+                </div>
+
                 <div class="text-center mt-4">
-                    <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
                         <i class="fas fa-arrow-left"></i> 대시보드로 돌아가기
                     </a>
                 </div>
@@ -74,35 +67,88 @@
     </div>
 </div>
 
+<script>
+async function initializeDatabase() {
+    const btn = document.getElementById('initDbBtn');
+    const progress = document.getElementById('initProgress');
+    const result = document.getElementById('initResult');
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    const resultMessage = document.getElementById('resultMessage');
+
+    // 버튼 비활성화
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 초기화 중...';
+    
+    // 진행률 표시
+    progress.style.display = 'block';
+    result.style.display = 'none';
+    
+    try {
+        // SQL 파일 읽기
+        progressBar.style.width = '20%';
+        progressText.textContent = 'SQL 파일 로딩 중...';
+        
+        const response = await fetch('/api/init-database', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+
+        progressBar.style.width = '100%';
+        progressText.textContent = '완료!';
+
+        if (response.ok) {
+            const data = await response.json();
+            resultMessage.className = 'alert alert-success';
+            resultMessage.innerHTML = `
+                <h6>✅ 데이터베이스 초기화 성공!</h6>
+                <p>한국시간대(KST) 설정이 적용되었습니다.</p>
+                <ul class="mb-0">
+                    <li>관리자 계정: admin / 0000</li>
+                    <li>기본 소속: B동보충, A지상보충, A지하보충</li>
+                    <li>모든 테이블과 정책이 생성되었습니다</li>
+                </ul>
+            `;
+        } else {
+            const errorData = await response.json();
+            throw new Error(errorData.error || '초기화에 실패했습니다.');
+        }
+    } catch (error) {
+        resultMessage.className = 'alert alert-danger';
+        resultMessage.innerHTML = `
+            <h6>❌ 초기화 실패</h6>
+            <p>오류: ${error.message}</p>
+            <p>관리자에게 문의하거나 다시 시도해주세요.</p>
+        `;
+    } finally {
+        result.style.display = 'block';
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-database"></i> 데이터베이스 초기화 실행';
+    }
+}
+</script>
+
 <style>
-.app-icon img {
+.app-icon i {
     border: 3px solid #0d6efd;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-
-.browser-install {
-    background-color: #f8f9fa;
+    border-radius: 50%;
     padding: 1rem;
-    border-radius: 0.5rem;
-    border-left: 4px solid #0d6efd;
+    background-color: #f8f9fa;
 }
 
-.browser-install ol {
-    margin-bottom: 0;
-    padding-left: 1.2rem;
-}
-
-.browser-install li {
-    margin-bottom: 0.5rem;
-}
-
-.app-features ul li {
+.database-info ul li {
     padding: 0.5rem 0;
     border-bottom: 1px solid #e9ecef;
 }
 
-.app-features ul li:last-child {
+.database-info ul li:last-child {
     border-bottom: none;
+}
+
+.progress {
+    height: 25px;
 }
 </style>
 {% endblock %} 
