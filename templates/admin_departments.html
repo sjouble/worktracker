@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% block title %}소속 관리 - 다이소 안성센터{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2>소속 관리</h2>
+                <p class="text-muted">소속 목록을 관리할 수 있습니다.</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary">대시보드</a>
+                <a href="{{ url_for('admin_users') }}" class="btn btn-outline-secondary">사용자 관리</a>
+                <a href="{{ url_for('logout') }}" class="btn btn-outline-danger">로그아웃</a>
+            </div>
+        </div>
+        
+        <!-- 소속 목록 -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">소속 목록</h5>
+                <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#departmentModal">
+                    새 소속 추가
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped" id="departmentsTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>소속명</th>
+                                <th>생성일</th>
+                                <th>관리</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- 소속 목록이 여기에 동적으로 로드됩니다 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 소속 추가/수정 모달 -->
+<div class="modal fade" id="departmentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="departmentModalTitle">새 소속 추가</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="departmentForm">
+                    <div class="mb-3">
+                        <label for="departmentName" class="form-label">소속명</label>
+                        <input type="text" class="form-control" id="departmentName" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <button type="button" class="btn btn-primary" onclick="saveDepartment()">저장</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentDepartmentId = null;
+
+// 페이지 로드 시 소속 목록 불러오기
+document.addEventListener('DOMContentLoaded', function() {
+    loadDepartments();
+});
+
+// 소속 목록 불러오기
+async function loadDepartments() {
+    try {
+        const response = await fetch('/api/departments');
+        const departments = await response.json();
+        
+        const tbody = document.querySelector('#departmentsTable tbody');
+        tbody.innerHTML = '';
+        
+        departments.forEach(dept => {
+            const row = `
+                <tr>
+                    <td>${dept.id}</td>
+                    <td>${dept.name}</td>
+                    <td>${new Date(dept.created_at).toLocaleDateString()}</td>
+                    <td>
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-sm btn-outline-primary" onclick="editDepartment(${dept.id}, '${dept.name}')">수정</button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteDepartment(${dept.id}, '${dept.name}')">삭제</button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
+        });
+    } catch (error) {
+        console.error('소속 목록 불러오기 실패:', error);
+    }
+}
+
+// 소속 저장
+async function saveDepartment() {
+    const name = document.getElementById('departmentName').value;
+    if (!name) {
+        alert('소속명을 입력해주세요.');
+        return;
+    }
+    
+    try {
+        const url = currentDepartmentId ? `/api/departments/${currentDepartmentId}` : '/api/departments';
+        const method = currentDepartmentId ? 'PUT' : 'POST';
+        
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ name: name })
+        });
+        
+        if (response.ok) {
+            bootstrap.Modal.getInstance(document.getElementById('departmentModal')).hide();
+            document.getElementById('departmentForm').reset();
+            currentDepartmentId = null;
+            document.getElementById('departmentModalTitle').textContent = '새 소속 추가';
+            loadDepartments();
+            alert(currentDepartmentId ? '소속이 수정되었습니다.' : '소속이 추가되었습니다.');
+        } else {
+            const error = await response.json();
+            alert(error.error || '소속 저장에 실패했습니다.');
+        }
+    } catch (error) {
+        alert('소속 저장 중 오류가 발생했습니다.');
+    }
+}
+
+// 소속 수정 모달 열기
+function editDepartment(id, name) {
+    currentDepartmentId = id;
+    document.getElementById('departmentName').value = name;
+    document.getElementById('departmentModalTitle').textContent = '소속 수정';
+    new bootstrap.Modal(document.getElementById('departmentModal')).show();
+}
+
+// 소속 삭제
+async function deleteDepartment(id, name) {
+    if (!confirm(`정말로 "${name}" 소속을 삭제하시겠습니까?\n이 소속에 속한 사용자들의 소속이 미지정으로 변경됩니다.`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/departments/${id}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            loadDepartments();
+            alert('소속이 삭제되었습니다.');
+        } else {
+            const error = await response.json();
+            alert(error.error || '소속 삭제에 실패했습니다.');
+        }
+    } catch (error) {
+        alert('소속 삭제 중 오류가 발생했습니다.');
+    }
+}
+
+// 모달 초기화
+document.getElementById('departmentModal').addEventListener('hidden.bs.modal', function() {
+    document.getElementById('departmentForm').reset();
+    currentDepartmentId = null;
+    document.getElementById('departmentModalTitle').textContent = '새 소속 추가';
+});
+</script>
+{% endblock %} 

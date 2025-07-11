@@ -666,6 +666,141 @@ def delete_department(dept_id):
         logger.error(f"소속 삭제 에러: {e}")
         return jsonify({'error': '소속 삭제에 실패했습니다.'}), 500
 
+# 관리자 페이지 라우트
+@app.route('/admin_users')
+def admin_users():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    
+    # 관리자 권한 확인
+    username = session['user']['username']
+    if username != 'admin':
+        try:
+            user_info = supabase.table('users').select('*').eq('id', session['user']['id']).execute()
+            if not user_info.data or user_info.data[0]['role'] != 'admin':
+                return redirect(url_for('dashboard'))
+        except:
+            return redirect(url_for('dashboard'))
+    
+    return render_template('admin_users.html', user={'username': username, 'role': 'admin'})
+
+@app.route('/admin_departments')
+def admin_departments():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    
+    # 관리자 권한 확인
+    username = session['user']['username']
+    if username != 'admin':
+        try:
+            user_info = supabase.table('users').select('*').eq('id', session['user']['id']).execute()
+            if not user_info.data or user_info.data[0]['role'] != 'admin':
+                return redirect(url_for('dashboard'))
+        except:
+            return redirect(url_for('dashboard'))
+    
+    return render_template('admin_departments.html', user={'username': username, 'role': 'admin'})
+
+# 추가 관리자 API 엔드포인트
+@app.route('/api/users/<user_id>/department', methods=['PUT'])
+def update_user_department(user_id):
+    if 'user' not in session:
+        return jsonify({'error': '로그인이 필요합니다.'}), 401
+    
+    # 관리자 권한 확인
+    username = session['user']['username']
+    if username != 'admin':
+        try:
+            user_info = supabase.table('users').select('*').eq('id', session['user']['id']).execute()
+            if not user_info.data or user_info.data[0]['role'] != 'admin':
+                return jsonify({'error': '관리자 권한이 필요합니다.'}), 403
+        except:
+            return jsonify({'error': '관리자 권한이 필요합니다.'}), 403
+    
+    if not supabase:
+        return jsonify({'error': '데이터베이스 연결에 문제가 있습니다.'}), 500
+    
+    try:
+        data = request.get_json()
+        department_id = data.get('department_id')
+        
+        if department_id is None:
+            return jsonify({'error': '소속 ID가 필요합니다.'}), 400
+        
+        # 사용자 소속 업데이트
+        result = supabase.table('users').update({'department_id': department_id}).eq('id', user_id).execute()
+        
+        if result.data:
+            return jsonify(result.data[0])
+        else:
+            return jsonify({'error': '사용자 소속 변경에 실패했습니다.'}), 500
+            
+    except Exception as e:
+        logger.error(f"사용자 소속 변경 에러: {e}")
+        return jsonify({'error': '사용자 소속 변경에 실패했습니다.'}), 500
+
+@app.route('/api/users/<user_id>/reset-password', methods=['PUT'])
+def reset_user_password(user_id):
+    if 'user' not in session:
+        return jsonify({'error': '로그인이 필요합니다.'}), 401
+    
+    # 관리자 권한 확인
+    username = session['user']['username']
+    if username != 'admin':
+        try:
+            user_info = supabase.table('users').select('*').eq('id', session['user']['id']).execute()
+            if not user_info.data or user_info.data[0]['role'] != 'admin':
+                return jsonify({'error': '관리자 권한이 필요합니다.'}), 403
+        except:
+            return jsonify({'error': '관리자 권한이 필요합니다.'}), 403
+    
+    if not supabase:
+        return jsonify({'error': '데이터베이스 연결에 문제가 있습니다.'}), 500
+    
+    try:
+        # 비밀번호를 1234로 초기화
+        result = supabase.table('users').update({'password_hash': '1234'}).eq('id', user_id).execute()
+        
+        if result.data:
+            return jsonify({'message': '비밀번호가 초기화되었습니다.'})
+        else:
+            return jsonify({'error': '비밀번호 초기화에 실패했습니다.'}), 500
+            
+    except Exception as e:
+        logger.error(f"비밀번호 초기화 에러: {e}")
+        return jsonify({'error': '비밀번호 초기화에 실패했습니다.'}), 500
+
+@app.route('/api/users/<user_id>', methods=['DELETE'])
+def delete_user(user_id):
+    if 'user' not in session:
+        return jsonify({'error': '로그인이 필요합니다.'}), 401
+    
+    # 관리자 권한 확인
+    username = session['user']['username']
+    if username != 'admin':
+        try:
+            user_info = supabase.table('users').select('*').eq('id', session['user']['id']).execute()
+            if not user_info.data or user_info.data[0]['role'] != 'admin':
+                return jsonify({'error': '관리자 권한이 필요합니다.'}), 403
+        except:
+            return jsonify({'error': '관리자 권한이 필요합니다.'}), 403
+    
+    if not supabase:
+        return jsonify({'error': '데이터베이스 연결에 문제가 있습니다.'}), 500
+    
+    try:
+        # 사용자 삭제
+        result = supabase.table('users').delete().eq('id', user_id).execute()
+        
+        if result.data:
+            return jsonify({'message': '사용자가 삭제되었습니다.'})
+        else:
+            return jsonify({'error': '사용자 삭제에 실패했습니다.'}), 500
+            
+    except Exception as e:
+        logger.error(f"사용자 삭제 에러: {e}")
+        return jsonify({'error': '사용자 삭제에 실패했습니다.'}), 500
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False) 
