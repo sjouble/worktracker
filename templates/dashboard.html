@@ -293,6 +293,18 @@ function getKoreanTimeString() {
     return formatter.format(now);
 }
 
+// 에러 메시지 정리 함수
+function cleanErrorMessage(error) {
+    if (typeof error === 'string') {
+        // URL 패턴 제거
+        return error.replace(/https?:\/\/[^\s]+/g, '').replace(/\/[^\s]+/g, '').trim();
+    }
+    if (error && error.error) {
+        return cleanErrorMessage(error.error);
+    }
+    return '오류가 발생했습니다.';
+}
+
 // 페이지 로드 시 초기화
 document.addEventListener('DOMContentLoaded', function() {
     // 오늘 날짜를 기본값으로 설정 (한국 시간 기준)
@@ -372,10 +384,10 @@ document.getElementById('taskForm').addEventListener('submit', async function(e)
             alert('업무가 시작되었습니다.');
         } else {
             const error = await response.json();
-            alert(error.error || '업무 시작에 실패했습니다.');
+            alert(cleanErrorMessage(error));
         }
     } catch (error) {
-        alert('업무 시작 중 오류가 발생했습니다.');
+        alert(cleanErrorMessage(error));
     }
 });
 
@@ -410,10 +422,10 @@ document.getElementById('completeTaskForm').addEventListener('submit', async fun
             alert('업무가 완료되었습니다.');
         } else {
             const error = await response.json();
-            alert(error.error || '업무 완료 처리에 실패했습니다.');
+            alert(cleanErrorMessage(error));
         }
     } catch (error) {
-        alert('업무 완료 처리 중 오류가 발생했습니다.');
+        alert(cleanErrorMessage(error));
     }
 });
 
@@ -569,10 +581,10 @@ async function editTask(taskId) {
             const modal = new bootstrap.Modal(document.getElementById('editTaskModal'));
             modal.show();
         } else {
-            alert('업무 정보를 불러오는데 실패했습니다.');
+            alert(cleanErrorMessage('업무 정보를 불러오는데 실패했습니다.'));
         }
     } catch (error) {
-        alert('업무 정보를 불러오는 중 오류가 발생했습니다.');
+        alert(cleanErrorMessage(error));
     }
 }
 
@@ -596,10 +608,10 @@ async function editCompletedTask(taskId) {
             const modal = new bootstrap.Modal(document.getElementById('editTaskModal'));
             modal.show();
         } else {
-            alert('업무 정보를 불러오는데 실패했습니다.');
+            alert(cleanErrorMessage('업무 정보를 불러오는데 실패했습니다.'));
         }
     } catch (error) {
-        alert('업무 정보를 불러오는 중 오류가 발생했습니다.');
+        alert(cleanErrorMessage(error));
     }
 }
 
@@ -643,10 +655,10 @@ async function saveTaskEdit() {
             alert('업무가 수정되었습니다.');
         } else {
             const error = await response.json();
-            alert(error.error || '업무 수정에 실패했습니다.');
+            alert(cleanErrorMessage(error));
         }
     } catch (error) {
-        alert('업무 수정 중 오류가 발생했습니다.');
+        alert(cleanErrorMessage(error));
     }
 }
 
@@ -696,10 +708,10 @@ async function confirmDeleteTask() {
             showSuccessMessage('업무가 성공적으로 삭제되었습니다.');
         } else {
             const error = await response.json();
-            showErrorMessage(error.error || '업무 삭제에 실패했습니다.');
+            showErrorMessage(cleanErrorMessage(error));
         }
     } catch (error) {
-        showErrorMessage('업무 삭제 중 오류가 발생했습니다.');
+        showErrorMessage(cleanErrorMessage(error));
     }
 }
 

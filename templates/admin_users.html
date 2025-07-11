@@ -93,6 +93,18 @@
 let currentUserId = null;
 let currentUserName = null;
 
+// 에러 메시지 정리 함수
+function cleanErrorMessage(error) {
+    if (typeof error === 'string') {
+        // URL 패턴 제거
+        return error.replace(/https?:\/\/[^\s]+/g, '').replace(/\/[^\s]+/g, '').trim();
+    }
+    if (error && error.error) {
+        return cleanErrorMessage(error.error);
+    }
+    return '오류가 발생했습니다.';
+}
+
 // 페이지 로드 시 사용자 목록 불러오기
 document.addEventListener('DOMContentLoaded', function() {
     loadUsers();
@@ -152,7 +164,7 @@ async function changeUserDepartment(userId, username, currentDepartmentId) {
         
         new bootstrap.Modal(document.getElementById('userDepartmentModal')).show();
     } catch (error) {
-        alert('소속 목록을 불러오는데 실패했습니다.');
+        alert(cleanErrorMessage(error));
     }
 }
 
@@ -179,10 +191,10 @@ async function updateUserDepartment() {
             alert('작업자 소속이 변경되었습니다.');
         } else {
             const error = await response.json();
-            alert(error.error || '작업자 소속 변경에 실패했습니다.');
+            alert(cleanErrorMessage(error));
         }
     } catch (error) {
-        alert('작업자 소속 변경 중 오류가 발생했습니다.');
+        alert(cleanErrorMessage(error));
     }
 }
 
@@ -209,10 +221,10 @@ async function confirmResetPassword() {
             alert('비밀번호가 초기화되었습니다. (새 비밀번호: 1234)');
         } else {
             const error = await response.json();
-            alert(error.error || '비밀번호 초기화에 실패했습니다.');
+            alert(cleanErrorMessage(error));
         }
     } catch (error) {
-        alert('비밀번호 초기화 중 오류가 발생했습니다.');
+        alert(cleanErrorMessage(error));
     }
 }
 
@@ -232,10 +244,10 @@ async function deleteUser(userId, username) {
             alert('작업자가 삭제되었습니다.');
         } else {
             const error = await response.json();
-            alert(error.error || '작업자 삭제에 실패했습니다.');
+            alert(cleanErrorMessage(error));
         }
     } catch (error) {
-        alert('작업자 삭제 중 오류가 발생했습니다.');
+        alert(cleanErrorMessage(error));
     }
 }
 </script>
