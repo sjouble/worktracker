@@ -83,21 +83,7 @@ async function deleteTask(taskId) {
     }
 }
 
-// 엑셀 다운로드 함수
-async function exportExcel() {
-    try {
-        const response = await fetch('/api/export');
-        const result = await response.json();
 
-        if (response.ok) {
-            window.location.href = `/download/${result.filename}`;
-        } else {
-            alert(result.error || '엑셀 파일 생성에 실패했습니다.');
-        }
-    } catch (error) {
-        alert('엑셀 다운로드 중 오류가 발생했습니다.');
-    }
-}
 
 // 날짜 시간 형식 변환 함수
 function formatDateTimeForInput(dateTimeString) {

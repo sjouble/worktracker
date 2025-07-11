@@ -148,7 +148,6 @@
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">전체 업무 목록</h5>
                 <div>
-                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="exportToExcel()">엑셀 다운로드</button>
                     <button type="button" class="btn btn-outline-info btn-sm" onclick="showStatistics()">통계 보기</button>
                 </div>
             </div>
@@ -403,28 +402,6 @@ function showStatistics() {
     new bootstrap.Modal(document.getElementById('statisticsModal')).show();
 }
 
-// 엑셀 다운로드
-function exportToExcel() {
-    // 현재 날짜를 YYYYMMDD 형태로 생성
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
-    const dateString = `${year}${month}${day}`;
-    
-    const csvContent = "data:text/csv;charset=utf-8," 
-        + "소속,작업자,업무유형,상태,시작시간,종료시간,작업일자\n"
-        + filteredTasks.map(task => 
-            `${task.users?.departments?.name || '미지정'},${task.users?.username || 'Unknown'},${task.task_type},${task.status},${task.start_time},${task.end_time || ''},${task.work_date || ''}`
-        ).join("\n");
-    
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `업무목록_${dateString}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
+
 </script>
 {% endblock %} 

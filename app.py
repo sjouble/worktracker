@@ -1,8 +1,7 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for, session, send_file
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session
 from supabase.client import create_client, Client
 import os
 from dotenv import load_dotenv
-import pandas as pd
 from datetime import datetime, date
 import uuid
 from typing import Optional
@@ -910,6 +909,8 @@ def get_admin_statistics():
     except Exception as e:
         logger.error(f"관리자 통계 조회 에러: {e}")
         return jsonify({'error': '통계 조회에 실패했습니다.'}), 500
+
+
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

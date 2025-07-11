@@ -138,6 +138,4 @@ dmypy.json
 .DS_Store
 Thumbs.db
 
-# Project specific
-static/exports/*
-!static/exports/.gitkeep 
+# Project specific 

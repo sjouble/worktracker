@@ -333,21 +333,7 @@ Response:
 }
 ```
 
-### 데이터 내보내기
-```
-GET /api/export
 
-Headers:
-- Cookie: session=...
-
-Query Parameters:
-- format: string (xlsx, csv, optional)
-- start_date: string (YYYY-MM-DD, optional)
-- end_date: string (YYYY-MM-DD, optional)
-
-Response:
-- Excel/CSV file download
-```
 
 ## 에러 응답
 
