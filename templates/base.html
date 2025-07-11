@@ -93,20 +93,31 @@
             // 먼저 버튼을 표시
             installButton.style.display = 'inline-block';
             
+            // 모바일 기기인지 확인
+            let isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
             if (canInstallPWA()) {
                 // 실제 PWA 설치 가능
                 installButton.innerHTML = '<i class="fas fa-download"></i> 앱 설치';
                 installButton.className = 'btn btn-outline-success w-100 mb-2';
                 installButton.onclick = installApp;
                 console.log('실제 PWA 설치 버튼으로 설정');
-            } else {
-                // 설치 안내로 이동
+            } else if (isMobile) {
+                // 모바일에서는 설치 안내로 이동
                 installButton.innerHTML = '<i class="fas fa-download"></i> 📱 앱 설치 안내';
                 installButton.className = 'btn btn-outline-info w-100 mb-2';
                 installButton.onclick = function() {
                     window.location.href = '/install';
                 };
-                console.log('설치 안내 버튼으로 설정');
+                console.log('모바일 설치 안내 버튼으로 설정');
+            } else {
+                // 데스크톱에서는 설치 안내로 이동
+                installButton.innerHTML = '<i class="fas fa-download"></i> 📱 앱 설치 안내';
+                installButton.className = 'btn btn-outline-info w-100 mb-2';
+                installButton.onclick = function() {
+                    window.location.href = '/install';
+                };
+                console.log('데스크톱 설치 안내 버튼으로 설정');
             }
         }
         
@@ -119,8 +130,10 @@
             // 설치 버튼 표시 및 설정
             if (installButton) {
                 installButton.style.display = 'inline-block';
-                updateInstallButton(); // 상태에 따라 버튼 업데이트
-                console.log('설치 버튼 표시됨 (beforeinstallprompt)');
+                installButton.innerHTML = '<i class="fas fa-download"></i> 앱 설치';
+                installButton.className = 'btn btn-outline-success w-100 mb-2';
+                installButton.onclick = installApp;
+                console.log('실제 PWA 설치 버튼으로 설정됨');
             } else {
                 console.log('설치 버튼 요소가 없음');
             }
@@ -167,24 +180,27 @@
                 if (mobileBanner) {
                     mobileBanner.style.display = 'block';
                 }
-                
-                if (installButton) {
-                    // 모바일에서는 설치 버튼을 항상 표시
-                    updateInstallButton(); // 상태에 따라 버튼 업데이트
-                }
-            } else {
-                // 데스크톱에서도 PWA 설치 가능한 경우 버튼 표시
-                if (installButton) {
-                    updateInstallButton();
-                }
             }
-        });
-        
-        // DOMContentLoaded 이벤트에서도 설치 버튼 설정
-        document.addEventListener('DOMContentLoaded', () => {
+            
+            // 설치 버튼 초기 설정
             if (installButton) {
-                // 모든 기기에서 설치 버튼 표시
-                updateInstallButton();
+                // beforeinstallprompt 이벤트가 발생하지 않았다면 설치 안내로 설정
+                if (!deferredPrompt) {
+                    let isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                    if (isMobile) {
+                        installButton.innerHTML = '<i class="fas fa-download"></i> 📱 앱 설치 안내';
+                        installButton.className = 'btn btn-outline-info w-100 mb-2';
+                        installButton.onclick = function() {
+                            window.location.href = '/install';
+                        };
+                    } else {
+                        installButton.innerHTML = '<i class="fas fa-download"></i> 📱 앱 설치 안내';
+                        installButton.className = 'btn btn-outline-info w-100 mb-2';
+                        installButton.onclick = function() {
+                            window.location.href = '/install';
+                        };
+                    }
+                }
             }
         });
     </script>
