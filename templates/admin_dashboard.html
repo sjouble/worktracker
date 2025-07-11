@@ -30,8 +30,8 @@
             <div class="col-md-3">
                 <div class="card bg-success text-white">
                     <div class="card-body">
-                        <h5 class="card-title">완료된 업무</h5>
-                        <h3 id="completedTasks">0</h3>
+                        <h5 class="card-title">오늘 작업 참여자</h5>
+                        <h3 id="todayParticipants">0</h3>
                     </div>
                 </div>
             </div>
@@ -217,6 +217,7 @@ let filteredTasks = [];
 document.addEventListener('DOMContentLoaded', function() {
     loadTasks();
     loadDepartments();
+    loadStatistics();
 });
 
 // 업무 목록 불러오기
@@ -226,7 +227,6 @@ async function loadTasks() {
         allTasks = await response.json();
         filteredTasks = [...allTasks];
         renderTasks();
-        updateStatistics();
     } catch (error) {
         console.error('업무 목록 불러오기 실패:', error);
     }
@@ -247,6 +247,21 @@ async function loadDepartments() {
         });
     } catch (error) {
         console.error('소속 목록 불러오기 실패:', error);
+    }
+}
+
+// 통계 불러오기
+async function loadStatistics() {
+    try {
+        const response = await fetch('/api/admin/statistics');
+        const statistics = await response.json();
+        
+        document.getElementById('totalWorkers').textContent = statistics.total_workers;
+        document.getElementById('todayParticipants').textContent = statistics.today_participants;
+        document.getElementById('ongoingTasks').textContent = statistics.ongoing_tasks;
+        document.getElementById('totalTasks').textContent = statistics.total_tasks;
+    } catch (error) {
+        console.error('통계 불러오기 실패:', error);
     }
 }
 
@@ -277,19 +292,6 @@ function renderTasks() {
         `;
         tbody.innerHTML += row;
     });
-}
-
-// 통계 업데이트
-function updateStatistics() {
-    const totalWorkers = new Set(allTasks.map(task => task.users?.username)).size;
-    const completedTasks = allTasks.filter(task => task.status === '완료').length;
-    const ongoingTasks = allTasks.filter(task => task.status === '진행중').length;
-    const totalTasks = allTasks.length;
-    
-    document.getElementById('totalWorkers').textContent = totalWorkers;
-    document.getElementById('completedTasks').textContent = completedTasks;
-    document.getElementById('ongoingTasks').textContent = ongoingTasks;
-    document.getElementById('totalTasks').textContent = totalTasks;
 }
 
 // 필터 적용

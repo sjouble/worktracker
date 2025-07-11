@@ -856,6 +856,56 @@ def get_admin_tasks():
         logger.error(f"관리자 업무 목록 조회 에러: {e}")
         return jsonify({'error': '업무 목록 조회에 실패했습니다.'}), 500
 
+# 관리자 대시보드 통계 API
+@app.route('/api/admin/statistics', methods=['GET'])
+def get_admin_statistics():
+    if 'user' not in session:
+        return jsonify({'error': '로그인이 필요합니다.'}), 401
+    
+    # 관리자 권한 확인
+    username = session['user']['username']
+    if username != 'admin':
+        try:
+            user_info = supabase.table('users').select('*').eq('id', session['user']['id']).execute()
+            if not user_info.data or user_info.data[0]['role'] != 'admin':
+                return jsonify({'error': '관리자 권한이 필요합니다.'}), 403
+        except:
+            return jsonify({'error': '관리자 권한이 필요합니다.'}), 403
+    
+    if not supabase:
+        return jsonify({'error': '데이터베이스 연결에 문제가 있습니다.'}), 500
+    
+    try:
+        today = date.today().isoformat()
+        
+        # 총 작업자 수 (회원가입된 모든 사용자)
+        total_users = supabase.table('users').select('id').execute()
+        total_workers = len(total_users.data)
+        
+        # 오늘 작업 참여자 수 (오늘 업무를 등록한 사용자)
+        today_workers = supabase.table('work_logs').select('user_id').eq('work_date', today).execute()
+        today_participants = len(set(task['user_id'] for task in today_workers.data))
+        
+        # 전체 업무 통계
+        all_tasks = supabase.table('work_logs').select('status').execute()
+        completed_tasks = len([task for task in all_tasks.data if task['status'] == '완료'])
+        ongoing_tasks = len([task for task in all_tasks.data if task['status'] == '진행중'])
+        total_tasks = len(all_tasks.data)
+        
+        statistics = {
+            'total_workers': total_workers,
+            'today_participants': today_participants,
+            'completed_tasks': completed_tasks,
+            'ongoing_tasks': ongoing_tasks,
+            'total_tasks': total_tasks
+        }
+        
+        return jsonify(statistics)
+        
+    except Exception as e:
+        logger.error(f"관리자 통계 조회 에러: {e}")
+        return jsonify({'error': '통계 조회에 실패했습니다.'}), 500
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port, debug=False) 
