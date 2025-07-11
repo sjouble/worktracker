@@ -41,37 +41,107 @@
     
     <!-- PWA 서비스 워커 등록 -->
     <script>
+        // PWA 설치 상태 확인
+        let deferredPrompt;
+        let installButton = document.getElementById('installButton');
+        
+        // 서비스 워커 등록
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/static/sw.js')
                     .then(registration => {
                         console.log('SW 등록 성공:', registration.scope);
+                        checkInstallability();
                     })
                     .catch(error => {
                         console.log('SW 등록 실패:', error);
+                        checkInstallability();
                     });
             });
+        } else {
+            console.log('서비스 워커를 지원하지 않는 브라우저입니다.');
+            checkInstallability();
         }
         
-        // PWA 설치 프롬프트
-        let deferredPrompt;
+        // PWA 설치 가능 여부 확인
+        function checkInstallability() {
+            // 매니페스트 확인
+            if ('serviceWorker' in navigator && 'PushManager' in window) {
+                console.log('PWA 기능 지원됨');
+            }
+            
+            // 설치 버튼이 있는지 확인
+            if (installButton) {
+                console.log('설치 버튼 요소 발견');
+            } else {
+                console.log('설치 버튼 요소를 찾을 수 없음');
+            }
+        }
+        
+        // PWA 설치 프롬프트 이벤트
         window.addEventListener('beforeinstallprompt', (e) => {
+            console.log('beforeinstallprompt 이벤트 발생');
             e.preventDefault();
             deferredPrompt = e;
             
-            // 설치 버튼 표시 (선택사항)
-            const installButton = document.getElementById('installButton');
+            // 설치 버튼 표시
             if (installButton) {
-                installButton.style.display = 'block';
-                installButton.addEventListener('click', () => {
-                    deferredPrompt.prompt();
-                    deferredPrompt.userChoice.then((choiceResult) => {
-                        if (choiceResult.outcome === 'accepted') {
-                            console.log('사용자가 앱 설치를 수락했습니다');
+                installButton.style.display = 'inline-block';
+                installButton.addEventListener('click', installApp);
+                console.log('설치 버튼 표시됨');
+            } else {
+                console.log('설치 버튼 요소가 없음');
+            }
+        });
+        
+        // 앱 설치 함수
+        function installApp() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('사용자가 앱 설치를 수락했습니다');
+                        if (installButton) {
+                            installButton.style.display = 'none';
                         }
-                        deferredPrompt = null;
-                    });
+                    } else {
+                        console.log('사용자가 앱 설치를 거부했습니다');
+                    }
+                    deferredPrompt = null;
                 });
+            } else {
+                console.log('설치 프롬프트가 없습니다');
+            }
+        }
+        
+        // 앱이 이미 설치되었는지 확인
+        window.addEventListener('appinstalled', (evt) => {
+            console.log('앱이 설치되었습니다');
+            if (installButton) {
+                installButton.style.display = 'none';
+            }
+        });
+        
+        // 페이지 로드 시 설치 버튼 상태 확인
+        window.addEventListener('load', () => {
+            // 모바일에서 수동 설치 안내 표시
+            if (/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+                console.log('모바일 기기 감지됨');
+                
+                // 모바일 설치 안내 배너 표시 (로그인 페이지 또는 대시보드)
+                const mobileBanner = document.getElementById('mobileInstallBanner');
+                if (mobileBanner) {
+                    mobileBanner.style.display = 'block';
+                }
+                
+                if (installButton) {
+                    // 모바일에서는 항상 설치 안내 버튼 표시
+                    installButton.style.display = 'inline-block';
+                    installButton.innerHTML = '<i class="fas fa-download"></i> 📱 앱 설치 안내';
+                    installButton.onclick = function() {
+                        window.location.href = '/install';
+                    };
+                }
             }
         });
     </script>

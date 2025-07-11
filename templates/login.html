@@ -3,6 +3,18 @@
 {% block title %}로그인 - 다이소 안성센터{% endblock %}
 
 {% block content %}
+<!-- 모바일 앱 설치 안내 배너 -->
+<div id="mobileInstallBanner" class="alert alert-info alert-dismissible fade show mb-4" style="display: none;">
+    <div class="d-flex align-items-center">
+        <i class="fas fa-mobile-alt me-2"></i>
+        <div class="flex-grow-1">
+            <strong>📱 앱으로 설치하세요!</strong> 
+            브라우저 주소창 없이 더 편리하게 사용할 수 있습니다.
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+</div>
+
 <div class="row justify-content-center">
     <div class="col-md-6 col-lg-4">
         <div class="card">
@@ -39,6 +51,17 @@
                     <button type="button" class="btn btn-warning w-100" data-bs-toggle="modal" data-bs-target="#adminLoginModal">
                         관리자 로그인
                     </button>
+                </div>
+                
+                <!-- 앱 설치 버튼들 -->
+                <hr class="my-4">
+                <div class="text-center">
+                    <button id="installButton" class="btn btn-outline-success w-100 mb-2" style="display: none;">
+                        <i class="fas fa-download"></i> 앱 설치
+                    </button>
+                    <a href="{{ url_for('install_app') }}" class="btn btn-outline-info w-100">
+                        <i class="fas fa-info-circle"></i> 설치 안내
+                    </a>
                 </div>
             </div>
         </div>
