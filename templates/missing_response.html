@@ -1,0 +1,290 @@
+{% extends "base.html" %}
+
+{% block title %}미출대응 - 다이소 안성센터{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2>미출대응 관리</h2>
+                <p class="text-muted">엑셀 파일을 업로드하여 미출대응 정렬 결과를 확인할 수 있습니다.</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary">대시보드로 돌아가기</a>
+                <a href="{{ url_for('logout') }}" class="btn btn-outline-danger">로그아웃</a>
+            </div>
+        </div>
+
+        <!-- 미출대응 처리 섹션 -->
+        <div class="row">
+            <!-- B동전용 -->
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="fas fa-building"></i> B동전용</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-3">
+                            B동 전용 미출대응 엑셀 파일을 업로드하여 정렬 결과를 확인합니다.
+                        </p>
+                        <form id="bBuildingForm" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <label for="bBuildingFile" class="form-label">엑셀 파일 선택</label>
+                                <input type="file" class="form-control" id="bBuildingFile" name="file" accept=".xlsx,.xls" required>
+                                <div class="form-text">Excel 파일(.xlsx, .xls)만 업로드 가능합니다.</div>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-upload"></i> B동 정렬 실행
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- A동지상 -->
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="fas fa-arrow-up"></i> A동지상 (P2)</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-3">
+                            A동 지상 미출대응 엑셀 파일을 업로드하여 P2 기준 정렬 결과를 확인합니다.
+                        </p>
+                        <form id="aGroundForm" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <label for="aGroundFile" class="form-label">엑셀 파일 선택</label>
+                                <input type="file" class="form-control" id="aGroundFile" name="file" accept=".xlsx,.xls" required>
+                                <div class="form-text">Excel 파일(.xlsx, .xls)만 업로드 가능합니다.</div>
+                            </div>
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="fas fa-upload"></i> A동지상 정렬 실행
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- A동지하 -->
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-header bg-warning text-white">
+                        <h5 class="mb-0"><i class="fas fa-arrow-down"></i> A동지하 (P1)</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted mb-3">
+                            A동 지하 미출대응 엑셀 파일을 업로드하여 P1 기준 정렬 결과를 확인합니다.
+                        </p>
+                        <form id="aBasementForm" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <label for="aBasementFile" class="form-label">엑셀 파일 선택</label>
+                                <input type="file" class="form-control" id="aBasementFile" name="file" accept=".xlsx,.xls" required>
+                                <div class="form-text">Excel 파일(.xlsx, .xls)만 업로드 가능합니다.</div>
+                            </div>
+                            <button type="submit" class="btn btn-warning w-100">
+                                <i class="fas fa-upload"></i> A동지하 정렬 실행
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 처리 결과 섹션 -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">정렬 결과</h5>
+            </div>
+            <div class="card-body">
+                <div id="resultArea">
+                    <div class="text-center text-muted">
+                        <i class="fas fa-file-excel fa-3x mb-3"></i>
+                        <p>엑셀 파일을 업로드하고 정렬을 실행하면 결과가 여기에 표시됩니다.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 처리 로그 섹션 -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">처리 로그</h5>
+            </div>
+            <div class="card-body">
+                <div id="processingLog" class="bg-dark text-light p-3 rounded" style="height: 200px; overflow-y: auto; font-family: monospace;">
+                    <div class="text-muted">처리 로그가 여기에 표시됩니다...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// 페이지 로드 시 실행
+document.addEventListener('DOMContentLoaded', function() {
+    // B동전용 폼 처리
+    document.getElementById('bBuildingForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        processFile('b-building', 'B동전용');
+    });
+
+    // A동지상 폼 처리
+    document.getElementById('aGroundForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        processFile('a-ground', 'A동지상');
+    });
+
+    // A동지하 폼 처리
+    document.getElementById('aBasementForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        processFile('a-basement', 'A동지하');
+    });
+});
+
+// 파일 처리 함수
+function processFile(type, displayName) {
+    const formData = new FormData();
+    let fileInput;
+    
+    // 타입에 따른 파일 입력 요소 선택
+    switch(type) {
+        case 'b-building':
+            fileInput = document.getElementById('bBuildingFile');
+            break;
+        case 'a-ground':
+            fileInput = document.getElementById('aGroundFile');
+            break;
+        case 'a-basement':
+            fileInput = document.getElementById('aBasementFile');
+            break;
+    }
+    
+    if (!fileInput.files[0]) {
+        alert('파일을 선택해주세요.');
+        return;
+    }
+    
+    formData.append('file', fileInput.files[0]);
+    formData.append('type', type);
+    
+    // 로그에 처리 시작 메시지 추가
+    addLog(`[${new Date().toLocaleString('ko-KR')}] ${displayName} 파일 처리 시작...`);
+    
+    // 결과 영역에 로딩 표시
+    document.getElementById('resultArea').innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">처리 중...</span>
+            </div>
+            <p class="mt-2">${displayName} 파일을 처리하고 있습니다...</p>
+        </div>
+    `;
+    
+    // 서버에 파일 업로드 및 처리 요청
+    fetch('/api/process-missing-response', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        const timestamp = new Date().toLocaleString('ko-KR');
+        
+        if (data.success) {
+            addLog(`[${timestamp}] ${displayName} 처리 성공: ${data.message}`);
+            displayResult(data.result, displayName);
+        } else {
+            addLog(`[${timestamp}] ${displayName} 처리 실패: ${data.message}`);
+            document.getElementById('resultArea').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>처리 실패:</strong> ${data.message}
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        const timestamp = new Date().toLocaleString('ko-KR');
+        addLog(`[${timestamp}] 오류 발생: ${error.message}`);
+        document.getElementById('resultArea').innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle"></i>
+                <strong>오류 발생:</strong> ${error.message}
+            </div>
+        `;
+    });
+}
+
+// 로그 추가 함수
+function addLog(message) {
+    const logElement = document.getElementById('processingLog');
+    logElement.innerHTML += `<div>${message}</div>`;
+    logElement.scrollTop = logElement.scrollHeight;
+}
+
+// 결과 표시 함수
+function displayResult(result, displayName) {
+    let resultHtml = `
+        <div class="alert alert-success">
+            <i class="fas fa-check-circle"></i>
+            <strong>${displayName} 정렬 완료!</strong>
+        </div>
+    `;
+    
+    if (result && result.length > 0) {
+        resultHtml += `
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>순번</th>
+                            <th>상품코드</th>
+                            <th>상품명</th>
+                            <th>수량</th>
+                            <th>위치</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+        
+        result.forEach((item, index) => {
+            resultHtml += `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${item.productCode || '-'}</td>
+                    <td>${item.productName || '-'}</td>
+                    <td>${item.quantity || '-'}</td>
+                    <td>${item.location || '-'}</td>
+                </tr>
+            `;
+        });
+        
+        resultHtml += `
+                    </tbody>
+                </table>
+            </div>
+            <div class="mt-3">
+                <button class="btn btn-outline-primary" onclick="downloadResult('${displayName}')">
+                    <i class="fas fa-download"></i> 결과 다운로드
+                </button>
+            </div>
+        `;
+    } else {
+        resultHtml += `
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                처리된 데이터가 없습니다.
+            </div>
+        `;
+    }
+    
+    document.getElementById('resultArea').innerHTML = resultHtml;
+}
+
+// 결과 다운로드 함수
+function downloadResult(displayName) {
+    // 실제 구현에서는 서버에서 처리된 결과를 다운로드
+    alert(`${displayName} 결과 다운로드 기능은 서버에서 구현됩니다.`);
+}
+</script>
+{% endblock %} 

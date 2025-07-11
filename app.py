@@ -728,6 +728,23 @@ def admin_departments():
     
     return render_template('admin_departments.html', user={'username': username, 'role': 'admin'})
 
+@app.route('/missing_response')
+def missing_response():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    
+    # 관리자 권한 확인
+    username = session['user']['username']
+    if username != 'admin':
+        try:
+            user_info = supabase.table('users').select('*').eq('id', session['user']['id']).execute()
+            if not user_info.data or user_info.data[0]['role'] != 'admin':
+                return redirect(url_for('dashboard'))
+        except:
+            return redirect(url_for('dashboard'))
+    
+    return render_template('missing_response.html', user={'username': username, 'role': 'admin'})
+
 @app.route('/install')
 def install_app():
     """데이터베이스 초기화 페이지"""
@@ -1017,6 +1034,190 @@ def get_admin_statistics():
     except Exception as e:
         logger.error(f"관리자 통계 조회 에러: {e}")
         return jsonify({'error': '통계 조회에 실패했습니다.'}), 500
+
+# 미출대응 엑셀 파일 처리 API
+@app.route('/api/process-missing-response', methods=['POST'])
+def process_missing_response():
+    if 'user' not in session:
+        return jsonify({'error': '로그인이 필요합니다.'}), 401
+    
+    # 관리자 권한 확인
+    username = session['user']['username']
+    if username != 'admin':
+        try:
+            user_info = supabase.table('users').select('*').eq('id', session['user']['id']).execute()
+            if not user_info.data or user_info.data[0]['role'] != 'admin':
+                return jsonify({'error': '관리자 권한이 필요합니다.'}), 403
+        except:
+            return jsonify({'error': '관리자 권한이 필요합니다.'}), 403
+    
+    try:
+        import pandas as pd
+        import os
+        from werkzeug.utils import secure_filename
+        
+        # 파일 업로드 확인
+        if 'file' not in request.files:
+            return jsonify({
+                'success': False,
+                'message': '파일이 업로드되지 않았습니다.'
+            }), 400
+        
+        file = request.files['file']
+        file_type = request.form.get('type', '')
+        
+        if file.filename == '':
+            return jsonify({
+                'success': False,
+                'message': '파일이 선택되지 않았습니다.'
+            }), 400
+        
+        # 파일 확장자 확인
+        if not file.filename.lower().endswith(('.xlsx', '.xls')):
+            return jsonify({
+                'success': False,
+                'message': 'Excel 파일(.xlsx, .xls)만 업로드 가능합니다.'
+            }), 400
+        
+        # 파일 저장
+        filename = secure_filename(file.filename)
+        upload_dir = os.path.join(os.getcwd(), 'uploads')
+        os.makedirs(upload_dir, exist_ok=True)
+        
+        file_path = os.path.join(upload_dir, filename)
+        file.save(file_path)
+        
+        logger.info(f"파일 업로드 완료: {filename}, 타입: {file_type}")
+        
+        # 엑셀 파일 읽기
+        try:
+            df = pd.read_excel(file_path)
+            logger.info(f"엑셀 파일 읽기 성공: {len(df)} 행")
+        except Exception as e:
+            logger.error(f"엑셀 파일 읽기 실패: {e}")
+            return jsonify({
+                'success': False,
+                'message': f'엑셀 파일 읽기에 실패했습니다: {str(e)}'
+            }), 500
+        
+        # 파일 타입에 따른 처리
+        result = []
+        
+        if file_type == 'b-building':
+            # B동전용 처리
+            result = process_b_building_data(df)
+        elif file_type == 'a-ground':
+            # A동지상 (P2) 처리
+            result = process_a_ground_data(df)
+        elif file_type == 'a-basement':
+            # A동지하 (P1) 처리
+            result = process_a_basement_data(df)
+        else:
+            return jsonify({
+                'success': False,
+                'message': '잘못된 파일 타입입니다.'
+            }), 400
+        
+        # 임시 파일 삭제
+        try:
+            os.remove(file_path)
+        except:
+            pass
+        
+        return jsonify({
+            'success': True,
+            'message': f'{len(result)}개의 항목이 정렬되었습니다.',
+            'result': result
+        })
+        
+    except Exception as e:
+        logger.error(f"미출대응 파일 처리 에러: {e}")
+        return jsonify({
+            'success': False,
+            'message': f'파일 처리 중 오류가 발생했습니다: {str(e)}'
+        }), 500
+
+def process_b_building_data(df):
+    """B동전용 데이터 처리"""
+    try:
+        # 기본 정렬 (첫 번째 컬럼 기준)
+        df_sorted = df.sort_values(df.columns[0])
+        
+        result = []
+        for index, row in df_sorted.iterrows():
+            result.append({
+                'productCode': str(row.iloc[0]) if len(row) > 0 else '',
+                'productName': str(row.iloc[1]) if len(row) > 1 else '',
+                'quantity': str(row.iloc[2]) if len(row) > 2 else '',
+                'location': 'B동'
+            })
+        
+        return result
+    except Exception as e:
+        logger.error(f"B동 데이터 처리 에러: {e}")
+        return []
+
+def process_a_ground_data(df):
+    """A동지상 (P2) 데이터 처리"""
+    try:
+        # P2 컬럼 찾기 (컬럼명에 'P2'가 포함된 컬럼)
+        p2_column = None
+        for col in df.columns:
+            if 'P2' in str(col):
+                p2_column = col
+                break
+        
+        if p2_column is None:
+            # P2 컬럼이 없으면 두 번째 컬럼 사용
+            p2_column = df.columns[1] if len(df.columns) > 1 else df.columns[0]
+        
+        # P2 기준으로 정렬
+        df_sorted = df.sort_values(p2_column)
+        
+        result = []
+        for index, row in df_sorted.iterrows():
+            result.append({
+                'productCode': str(row.iloc[0]) if len(row) > 0 else '',
+                'productName': str(row.iloc[1]) if len(row) > 1 else '',
+                'quantity': str(row.iloc[2]) if len(row) > 2 else '',
+                'location': 'A동지상(P2)'
+            })
+        
+        return result
+    except Exception as e:
+        logger.error(f"A동지상 데이터 처리 에러: {e}")
+        return []
+
+def process_a_basement_data(df):
+    """A동지하 (P1) 데이터 처리"""
+    try:
+        # P1 컬럼 찾기 (컬럼명에 'P1'이 포함된 컬럼)
+        p1_column = None
+        for col in df.columns:
+            if 'P1' in str(col):
+                p1_column = col
+                break
+        
+        if p1_column is None:
+            # P1 컬럼이 없으면 첫 번째 컬럼 사용
+            p1_column = df.columns[0]
+        
+        # P1 기준으로 정렬
+        df_sorted = df.sort_values(p1_column)
+        
+        result = []
+        for index, row in df_sorted.iterrows():
+            result.append({
+                'productCode': str(row.iloc[0]) if len(row) > 0 else '',
+                'productName': str(row.iloc[1]) if len(row) > 1 else '',
+                'quantity': str(row.iloc[2]) if len(row) > 2 else '',
+                'location': 'A동지하(P1)'
+            })
+        
+        return result
+    except Exception as e:
+        logger.error(f"A동지하 데이터 처리 에러: {e}")
+        return []
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
