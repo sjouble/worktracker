@@ -100,9 +100,15 @@ def register():
         department_id = request.form.get('department')
         
         if not supabase:
-            return jsonify({'error': 'Supabase 연결이 없습니다.'}), 500
+            return render_template('register.html', error="데이터베이스 연결에 문제가 있습니다. 관리자에게 문의하세요.")
         
         try:
+            # 사용자명 중복 검사
+            existing_user = supabase.table('users').select('username').eq('username', username).execute()
+            
+            if existing_user.data:
+                return render_template('register.html', error="이미 사용 중인 사용자명입니다. 다른 사용자명을 선택해주세요.")
+            
             # 사용자 ID 생성
             user_id = str(uuid.uuid4())
             
@@ -121,13 +127,18 @@ def register():
             result = supabase.table('users').insert(user_data).execute()
             
             if result.data:
-                return jsonify({'success': True, 'message': '회원가입 성공!', 'user_id': user_id})
+                # 성공 메시지를 세션에 저장하고 로그인 페이지로 리다이렉트
+                session['success_message'] = '회원가입이 완료되었습니다! 로그인해주세요.'
+                return redirect(url_for('login'))
             else:
-                return jsonify({'error': '회원가입 실패'}), 400
+                return render_template('register.html', error="회원가입에 실패했습니다. 다시 시도해주세요.")
                 
         except Exception as e:
             logger.error(f"회원가입 에러: {e}")
-            return jsonify({'error': f'회원가입 중 오류가 발생했습니다: {str(e)}'}), 500
+            # 중복 키 오류인 경우 특별 처리
+            if "duplicate key value violates unique constraint" in str(e):
+                return render_template('register.html', error="이미 사용 중인 사용자명입니다. 다른 사용자명을 선택해주세요.")
+            return render_template('register.html', error="회원가입 중 오류가 발생했습니다. 다시 시도해주세요.")
     
     # GET 요청 시 소속 목록 조회
     try:

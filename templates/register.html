@@ -23,8 +23,8 @@
                         <input type="text" class="form-control" id="username" name="username" autocomplete="username" required>
                     </div>
                     <div class="mb-3">
-                        <label for="department" class="form-label">소속</label>
-                        <select class="form-select" id="department" name="department" autocomplete="organization" required>
+                        <label for="department" class="form-label">소속 (선택사항)</label>
+                        <select class="form-select" id="department" name="department" autocomplete="organization">
                             <option value="">소속을 선택하세요</option>
                             {% for dept in departments %}
                                 <option value="{{ dept.id }}">{{ dept.name }}</option>
