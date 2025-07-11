@@ -240,14 +240,14 @@ def admin_dashboard():
                              user={'username': username, 'role': 'admin'},
                              departments=departments,
                              users=users,
-                             work_logs=work_logs)
+                             tasks=work_logs)
     except Exception as e:
         logger.error(f"관리자 대시보드 에러: {e}")
         return render_template('admin_dashboard.html', 
                              user={'username': username, 'role': 'admin'},
                              departments=[],
                              users=[],
-                             work_logs=[])
+                             tasks=[])
 
 @app.route('/test')
 def test():

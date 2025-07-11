@@ -92,15 +92,15 @@
                             <tr>
                                 <td>{{ task.users.username if task.users else 'Unknown' }}</td>
                                 <td>{{ task.task_type }}</td>
-                                <td>{{ task.description }}</td>
+                                <td>{{ task.description or '내용 없음' }}</td>
                                 <td>
                                     <span class="badge {% if task.status == '완료' %}bg-success{% else %}bg-warning{% endif %}">
                                         {{ task.status }}
                                     </span>
                                 </td>
                                 <td>{{ task.start_time }}</td>
-                                <td>{{ task.end_time }}</td>
-                                <td>{{ task.created_at }}</td>
+                                <td>{{ task.end_time or '-' }}</td>
+                                <td>{{ task.created_at[:10] if task.created_at else '-' }}</td>
                                 <td>
                                     <button class="btn btn-sm btn-outline-primary">수정</button>
                                     <button class="btn btn-sm btn-outline-danger">삭제</button>
