@@ -405,6 +405,13 @@ function showStatistics() {
 
 // 엑셀 다운로드
 function exportToExcel() {
+    // 현재 날짜를 YYYYMMDD 형태로 생성
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const dateString = `${year}${month}${day}`;
+    
     const csvContent = "data:text/csv;charset=utf-8," 
         + "소속,작업자,업무유형,상태,시작시간,종료시간,작업일자\n"
         + filteredTasks.map(task => 
@@ -414,7 +421,7 @@ function exportToExcel() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "업무목록.csv");
+    link.setAttribute("download", `업무목록_${dateString}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
