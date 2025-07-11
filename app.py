@@ -750,6 +750,11 @@ def install_app():
     """데이터베이스 초기화 페이지"""
     return render_template('install.html')
 
+@app.route('/pwa-install')
+def pwa_install():
+    """PWA 설치 안내 페이지"""
+    return render_template('pwa_install.html')
+
 @app.route('/api/init-database', methods=['POST'])
 def init_database():
     """데이터베이스 완전 초기화 (KST 시간대 적용)"""
