@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for, session
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session, send_file
 from supabase.client import create_client, Client
 import os
 from dotenv import load_dotenv
@@ -6,6 +6,11 @@ from datetime import datetime, date, timezone, timedelta
 import uuid
 from typing import Optional
 import logging
+import openpyxl
+from openpyxl.styles import PatternFill, Font, Alignment
+from openpyxl.utils import get_column_letter
+import tempfile
+import pandas as pd
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO)
@@ -21,6 +26,184 @@ def get_korean_date():
 def get_korean_datetime():
     """한국 시간 기준으로 현재 시간을 반환"""
     return datetime.now(KST)
+
+def process_excel_p3(file_path):
+    """P3 정렬 처리 (중복 제거 포함)"""
+    logger.info(f"P3 처리 시작: {file_path}")
+    
+    wb = openpyxl.load_workbook(file_path)
+    ws = wb.active
+    last_row = ws.max_row
+    last_col = ws.max_column
+    
+    logger.info(f"Excel 파일 크기: {last_row}행 x {last_col}열")
+
+    p1p2_dict = {}
+    p3_dict = {}
+
+    for i in range(3, last_row + 1):
+        b = str(ws.cell(i, 2).value)
+        type_code = str(ws.cell(i, 15).value)
+        if type_code.startswith("P1") or type_code.startswith("P2"):
+            p1p2_dict[b] = True
+        elif type_code.startswith("P3"):
+            p3_dict.setdefault(b, []).append(i)
+
+    logger.info(f"P1/P2 항목 수: {len(p1p2_dict)}, P3 항목 수: {len(p3_dict)}")
+
+    filtered = {k: v for k, v in p3_dict.items() if k not in p1p2_dict}
+    logger.info(f"중복 제거 후 P3 항목 수: {len(filtered)}")
+
+    group_array = []
+    for key, rows in filtered.items():
+        기준문자 = str(ws.cell(rows[0], 15).value)[2:3]
+        group_array.append((key, 기준문자, rows))
+    group_array.sort(key=lambda x: x[1])
+    
+    logger.info(f"정렬된 그룹 수: {len(group_array)}")
+
+    new_wb = openpyxl.Workbook()
+    result_ws = new_wb.active
+    result_ws.title = "정렬결과"
+
+    result_row = 3
+    yellow_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
+    red_bold = Font(color="FF0000", bold=True)
+    center_align = Alignment(horizontal="center", vertical="center")
+
+    for key, 기준문자, rows in group_array:
+        m_high = any(ws.cell(i, 13).value not in [None, 0, ''] for i in rows)
+        n_high = any(ws.cell(i, 14).value not in [None, 0, ''] for i in rows)
+        start = result_row
+
+        for i in rows:
+            for c in range(1, last_col + 1):
+                value = ws.cell(i, c).value
+                result_ws.cell(result_row, c).value = value
+                result_ws.cell(result_row, c).alignment = center_align
+            if len(rows) > 1:
+                result_ws.cell(result_row, 2).fill = PatternFill(start_color="FFC0CB", end_color="FFC0CB", fill_type="solid")
+            result_row += 1
+
+        if m_high:
+            for r in range(start, result_row):
+                cell = result_ws.cell(r, 13)
+                cell.fill = yellow_fill
+                cell.font = red_bold
+                cell.alignment = center_align
+
+        if n_high:
+            for r in range(start, result_row):
+                cell = result_ws.cell(r, 14)
+                cell.fill = yellow_fill
+                cell.font = red_bold
+                cell.alignment = center_align
+
+        def merge_same(col):
+            val = result_ws.cell(start, col).value
+            if all(result_ws.cell(r, col).value == val for r in range(start, result_row)):
+                result_ws.merge_cells(start_row=start, start_column=col, end_row=result_row - 1, end_column=col)
+                result_ws.cell(start, col).alignment = center_align
+
+        merge_same(13)
+        merge_same(14)
+
+    for r in range(1, 3):
+        for c in range(1, last_col + 1):
+            value = ws.cell(r, c).value
+            result_ws.cell(r, c).value = value
+            result_ws.cell(r, c).alignment = center_align
+
+    for col in range(1, last_col + 1):
+        max_len = max(len(str(result_ws.cell(r, col).value or "")) for r in range(1, result_ws.max_row + 1))
+        result_ws.column_dimensions[get_column_letter(col)].width = max_len + 2
+
+    return new_wb
+
+def process_excel_general(file_path, 기준코드):
+    """일반 정렬 처리 (P1, P2 등)"""
+    logger.info(f"{기준코드} 처리 시작: {file_path}")
+    
+    wb = openpyxl.load_workbook(file_path)
+    ws = wb.active
+    last_row = ws.max_row
+    last_col = ws.max_column
+    
+    logger.info(f"Excel 파일 크기: {last_row}행 x {last_col}열")
+
+    group_dict = {}
+    for i in range(3, last_row + 1):
+        code = str(ws.cell(i, 15).value)
+        if code.startswith(기준코드):
+            key = str(ws.cell(i, 2).value)
+            group_dict.setdefault(key, []).append(i)
+
+    logger.info(f"{기준코드} 항목 수: {len(group_dict)}")
+
+    group_array = []
+    for key, rows in group_dict.items():
+        기준문자 = str(ws.cell(rows[0], 15).value)[2:3]
+        group_array.append((key, 기준문자, rows))
+    group_array.sort(key=lambda x: x[1])
+    
+    logger.info(f"정렬된 그룹 수: {len(group_array)}")
+
+    new_wb = openpyxl.Workbook()
+    result_ws = new_wb.active
+    result_ws.title = "정렬결과"
+
+    result_row = 3
+    yellow_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
+    red_bold = Font(color="FF0000", bold=True)
+    center_align = Alignment(horizontal="center", vertical="center")
+    pink_fill = PatternFill(start_color="FFC0CB", end_color="FFC0CB", fill_type="solid")
+
+    for _, _, rows in group_array:
+        start = result_row
+        m_high = any(ws.cell(i, 13).value not in [None, 0, ''] for i in rows)
+        n_high = any(ws.cell(i, 14).value not in [None, 0, ''] for i in rows)
+
+        for i in rows:
+            for c in range(1, last_col + 1):
+                result_ws.cell(result_row, c).value = ws.cell(i, c).value
+                result_ws.cell(result_row, c).alignment = center_align
+            if len(rows) > 1:
+                result_ws.cell(result_row, 2).fill = pink_fill
+            result_row += 1
+
+        if m_high:
+            for r in range(start, result_row):
+                cell = result_ws.cell(r, 13)
+                cell.fill = yellow_fill
+                cell.font = red_bold
+                cell.alignment = center_align
+
+        if n_high:
+            for r in range(start, result_row):
+                cell = result_ws.cell(r, 14)
+                cell.fill = yellow_fill
+                cell.font = red_bold
+                cell.alignment = center_align
+
+        def merge_same(col):
+            val = result_ws.cell(start, col).value
+            if all(result_ws.cell(r, col).value == val for r in range(start, result_row)):
+                result_ws.merge_cells(start_row=start, start_column=col, end_row=result_row - 1, end_column=col)
+                result_ws.cell(start, col).alignment = center_align
+
+        merge_same(13)
+        merge_same(14)
+
+    for r in range(1, 3):
+        for c in range(1, last_col + 1):
+            result_ws.cell(r, c).value = ws.cell(r, c).value
+            result_ws.cell(r, c).alignment = center_align
+
+    for col in range(1, last_col + 1):
+        max_len = max(len(str(result_ws.cell(r, col).value or "")) for r in range(1, result_ws.max_row + 1))
+        result_ws.column_dimensions[get_column_letter(col)].width = max_len + 2
+
+    return new_wb
 
 # 환경 변수 로드 (로컬 개발용)
 if os.path.exists('.env'):
@@ -1041,6 +1224,159 @@ def get_admin_statistics():
         return jsonify({'error': '통계 조회에 실패했습니다.'}), 500
 
 # 미출대응 엑셀 파일 처리 API
+@app.route('/api/meechul-process', methods=['POST'])
+def meechul_process():
+    """미출대응 Excel 파일 처리"""
+    if 'user' not in session:
+        return jsonify({'error': '로그인이 필요합니다.'}), 401
+    
+    # 관리자 권한 확인
+    if session['user'].get('role') != 'admin':
+        return jsonify({'error': '관리자 권한이 필요합니다.'}), 403
+    
+    try:
+        # 파일 업로드 확인
+        if 'file' not in request.files:
+            return jsonify({'error': '파일이 업로드되지 않았습니다.'}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': '파일이 선택되지 않았습니다.'}), 400
+        
+        # 파일 확장자 확인
+        if not file.filename.lower().endswith(('.xlsx', '.xls')):
+            return jsonify({'error': 'Excel 파일만 업로드 가능합니다.'}), 400
+        
+        # 기준 코드 확인
+        기준코드 = request.form.get('criteria', 'P3')
+        if 기준코드 not in ['P1', 'P2', 'P3']:
+            return jsonify({'error': '올바르지 않은 기준 코드입니다.'}), 400
+        
+        logger.info(f"미출대응 처리 시작: 파일={file.filename}, 기준코드={기준코드}")
+        
+        # 임시 파일로 저장
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tmp_file:
+            file.save(tmp_file.name)
+            file_path = tmp_file.name
+        
+        logger.info(f"임시 파일 저장 완료: {file_path}")
+        
+        try:
+            # Excel 처리
+            logger.info(f"Excel 처리 시작: {기준코드}")
+            if 기준코드 == 'P3':
+                processed_wb = process_excel_p3(file_path)
+            else:
+                processed_wb = process_excel_general(file_path, 기준코드)
+            
+            logger.info("Excel 처리 완료")
+            
+            # 결과 파일 저장
+            output_filename = f"정렬결과_{기준코드}_{get_korean_datetime().strftime('%Y%m%d_%H%M%S')}.xlsx"
+            output_path = os.path.join(tempfile.gettempdir(), output_filename)
+            processed_wb.save(output_path)
+            
+            logger.info(f"결과 파일 저장 완료: {output_path}")
+            
+            # 임시 입력 파일 삭제
+            os.unlink(file_path)
+            logger.info("임시 입력 파일 삭제 완료")
+            
+            return jsonify({
+                'success': True,
+                'message': f'{기준코드} 정렬이 완료되었습니다. 파일명: {output_filename}',
+                'filename': output_filename,
+                'download_url': f'/api/meechul-download/{output_filename}'
+            })
+            
+        except Exception as e:
+            # 임시 파일 정리
+            if os.path.exists(file_path):
+                os.unlink(file_path)
+                logger.info("오류 발생으로 임시 파일 정리 완료")
+            logger.error(f"Excel 처리 중 오류: {e}")
+            raise e
+            
+    except Exception as e:
+        logger.error(f"미출대응 처리 에러: {e}")
+        return jsonify({'error': f'파일 처리 중 오류가 발생했습니다: {str(e)}'}), 500
+
+@app.route('/api/meechul-test')
+def meechul_test():
+    """미출대응 기능 테스트용 엔드포인트"""
+    if 'user' not in session:
+        return jsonify({'error': '로그인이 필요합니다.'}), 401
+    
+    # 관리자 권한 확인
+    if session['user'].get('role') != 'admin':
+        return jsonify({'error': '관리자 권한이 필요합니다.'}), 403
+    
+    try:
+        # 테스트용 간단한 Excel 파일 생성
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "테스트"
+        
+        # 헤더 추가
+        headers = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O']
+        for col, header in enumerate(headers, 1):
+            ws.cell(row=1, column=col, value=header)
+            ws.cell(row=2, column=col, value=header)
+        
+        # 테스트 데이터 추가 (P1, P2, P3 코드 포함)
+        test_data = [
+            ['1', 'ITEM001', 'P1A', '', '', '', '', '', '', '', '', '', '0', '0', 'P1A'],
+            ['2', 'ITEM002', 'P2B', '', '', '', '', '', '', '', '', '', '0', '0', 'P2B'],
+            ['3', 'ITEM003', 'P3C', '', '', '', '', '', '', '', '', '', '1', '0', 'P3C'],
+            ['4', 'ITEM004', 'P3D', '', '', '', '', '', '', '', '', '', '0', '1', 'P3D'],
+        ]
+        
+        for row_idx, row_data in enumerate(test_data, 3):
+            for col_idx, value in enumerate(row_data, 1):
+                ws.cell(row=row_idx, column=col_idx, value=value)
+        
+        # 임시 파일로 저장
+        test_filename = f"테스트파일_{get_korean_datetime().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        test_path = os.path.join(tempfile.gettempdir(), test_filename)
+        wb.save(test_path)
+        
+        return jsonify({
+            'success': True,
+            'message': '테스트 파일이 생성되었습니다.',
+            'test_file': test_filename,
+            'test_path': test_path
+        })
+        
+    except Exception as e:
+        logger.error(f"테스트 파일 생성 오류: {e}")
+        return jsonify({'error': f'테스트 파일 생성 중 오류가 발생했습니다: {str(e)}'}), 500
+
+@app.route('/api/meechul-download/<filename>')
+def meechul_download(filename):
+    """미출대응 처리 결과 파일 다운로드"""
+    if 'user' not in session:
+        return jsonify({'error': '로그인이 필요합니다.'}), 401
+    
+    # 관리자 권한 확인
+    if session['user'].get('role') != 'admin':
+        return jsonify({'error': '관리자 권한이 필요합니다.'}), 403
+    
+    try:
+        file_path = os.path.join(tempfile.gettempdir(), filename)
+        if not os.path.exists(file_path):
+            return jsonify({'error': '파일을 찾을 수 없습니다.'}), 404
+        
+        return send_file(
+            file_path,
+            as_attachment=True,
+            download_name=filename,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        
+    except Exception as e:
+        logger.error(f"파일 다운로드 에러: {e}")
+        return jsonify({'error': '파일 다운로드 중 오류가 발생했습니다.'}), 500
+
 @app.route('/api/process-missing-response', methods=['POST'])
 def process_missing_response():
     if 'user' not in session:

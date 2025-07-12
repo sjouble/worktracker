@@ -13,7 +13,7 @@
             <div class="d-flex gap-2">
                 <a href="{{ url_for('admin_users') }}" class="btn btn-outline-primary">사용자 관리</a>
                 <a href="{{ url_for('admin_departments') }}" class="btn btn-outline-secondary">소속 관리</a>
-                <a href="{{ url_for('missing_response') }}" class="btn btn-outline-warning">미출대응</a>
+                <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#meechulModal">미출대응</button>
                 <a href="{{ url_for('logout') }}" class="btn btn-outline-danger">로그아웃</a>
             </div>
         </div>
@@ -308,6 +308,95 @@
     </div>
 </div>
 
+<!-- 미출대응 모달 -->
+<div class="modal fade" id="meechulModal" tabindex="-1" aria-labelledby="meechulModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="meechulModalLabel">
+                    <i class="fas fa-file-excel text-success me-2"></i>미출대응 Excel 정렬
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <h6 class="alert-heading">📋 미출대응 정렬 프로그램</h6>
+                    <p class="mb-2">Excel 파일을 업로드하여 P1, P2, P3 기준으로 정렬할 수 있습니다.</p>
+                    <ul class="mb-0">
+                        <li><strong>P1 정렬:</strong> P1 코드 기준으로 정렬</li>
+                        <li><strong>P2 정렬:</strong> P2 코드 기준으로 정렬</li>
+                        <li><strong>P3 정렬:</strong> P3 코드 기준으로 정렬 (P1/P2 중복 제거)</li>
+                    </ul>
+                </div>
+                
+                <form id="meechulForm" enctype="multipart/form-data">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="excelFile" class="form-label">Excel 파일 선택</label>
+                                <input type="file" class="form-control" id="excelFile" name="file" accept=".xlsx,.xls" required>
+                                <div class="form-text">Excel 파일(.xlsx, .xls)만 업로드 가능합니다.</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="criteria" class="form-label">정렬 기준</label>
+                                <select class="form-select" id="criteria" name="criteria" required>
+                                    <option value="P3">P3 정렬 (중복 제거)</option>
+                                    <option value="P1">P1 정렬</option>
+                                    <option value="P2">P2 정렬</option>
+                                </select>
+                                <div class="form-text">정렬할 기준 코드를 선택하세요.</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success" id="processBtn">
+                            <i class="fas fa-cog me-2"></i>정렬 처리 시작
+                        </button>
+                        <button type="button" class="btn btn-outline-info" onclick="testMeechul()">
+                            <i class="fas fa-vial me-2"></i>테스트 파일 생성
+                        </button>
+                    </div>
+                </form>
+                
+                <div id="processingStatus" class="mt-3" style="display: none;">
+                    <div class="alert alert-warning">
+                        <div class="d-flex align-items-center">
+                            <div class="spinner-border spinner-border-sm me-2" role="status">
+                                <span class="visually-hidden">처리 중...</span>
+                            </div>
+                            <span>파일을 처리하고 있습니다. 잠시만 기다려주세요...</span>
+                        </div>
+                        <div class="mt-2">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                처리 과정: 파일 업로드 → Excel 분석 → 정렬 처리 → 결과 파일 생성
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="resultStatus" class="mt-3" style="display: none;">
+                    <div class="alert alert-success">
+                        <h6 class="alert-heading">✅ 처리 완료</h6>
+                        <p id="resultMessage" class="mb-2"></p>
+                        <div id="downloadSection" style="display: none;">
+                            <a href="#" id="downloadLink" class="btn btn-primary btn-sm">
+                                <i class="fas fa-download me-1"></i>결과 파일 다운로드
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 let allTasks = [];
 let filteredTasks = [];
@@ -341,6 +430,9 @@ document.addEventListener('DOMContentLoaded', function() {
     loadTasks();
     loadDepartments();
     loadStatistics();
+    
+    // 미출대응 폼 이벤트 리스너
+    document.getElementById('meechulForm').addEventListener('submit', handleMeechulSubmit);
 });
 
 // 업무 목록 불러오기
@@ -676,6 +768,94 @@ async function confirmDeleteTask() {
     }
 }
 
+// 미출대응 처리 함수
+async function handleMeechulSubmit(e) {
+    e.preventDefault();
+    
+    const formData = new FormData();
+    const fileInput = document.getElementById('excelFile');
+    const criteriaSelect = document.getElementById('criteria');
+    
+    if (!fileInput.files[0]) {
+        alert('Excel 파일을 선택해주세요.');
+        return;
+    }
+    
+    formData.append('file', fileInput.files[0]);
+    formData.append('criteria', criteriaSelect.value);
+    
+    // UI 상태 변경
+    const processBtn = document.getElementById('processBtn');
+    const processingStatus = document.getElementById('processingStatus');
+    const resultStatus = document.getElementById('resultStatus');
+    
+    processBtn.disabled = true;
+    processBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>처리 중...';
+    processingStatus.style.display = 'block';
+    resultStatus.style.display = 'none';
+    
+    try {
+        const response = await fetch('/api/meechul-process', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+            // 성공 처리
+            document.getElementById('resultMessage').textContent = result.message;
+            document.getElementById('downloadLink').href = result.download_url;
+            document.getElementById('downloadSection').style.display = 'block';
+            resultStatus.style.display = 'block';
+            
+            // 폼 초기화
+            document.getElementById('meechulForm').reset();
+        } else {
+            // 오류 처리
+            const errorMessage = result.error || '파일 처리 중 오류가 발생했습니다.';
+            console.error('미출대응 처리 오류:', result);
+            alert(cleanErrorMessage(errorMessage));
+        }
+    } catch (error) {
+        console.error('미출대응 처리 오류:', error);
+        alert(cleanErrorMessage(error));
+    } finally {
+        // UI 상태 복원
+        processBtn.disabled = false;
+        processBtn.innerHTML = '<i class="fas fa-cog me-2"></i>정렬 처리 시작';
+        processingStatus.style.display = 'none';
+    }
+}
+
+// 미출대응 테스트 함수
+async function testMeechul() {
+    try {
+        const response = await fetch('/api/meechul-test');
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+            alert(`테스트 파일이 생성되었습니다.\n파일명: ${result.test_file}\n경로: ${result.test_path}`);
+        } else {
+            alert(cleanErrorMessage(result.error || '테스트 파일 생성에 실패했습니다.'));
+        }
+    } catch (error) {
+        console.error('테스트 오류:', error);
+        alert(cleanErrorMessage(error));
+    }
+}
+
+// 미출대응 모달 초기화
+document.getElementById('meechulModal').addEventListener('hidden.bs.modal', function() {
+    document.getElementById('meechulForm').reset();
+    document.getElementById('processingStatus').style.display = 'none';
+    document.getElementById('resultStatus').style.display = 'none';
+    document.getElementById('downloadSection').style.display = 'none';
+    
+    const processBtn = document.getElementById('processBtn');
+    processBtn.disabled = false;
+    processBtn.innerHTML = '<i class="fas fa-cog me-2"></i>정렬 처리 시작';
+});
 
 </script>
 {% endblock %} 
