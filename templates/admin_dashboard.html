@@ -165,8 +165,7 @@
                             <tr>
                                 <th class="text-center">소속</th>
                                 <th class="text-center">작업자</th>
-                                <th class="text-center">업무 유형</th>
-                                <th class="text-center">상태</th>
+                                <th class="text-center">업무 유형 / 상태</th>
                                 <th class="text-center">시작 시간</th>
                                 <th class="text-center">종료 시간</th>
                                 <th class="text-center">작업일자</th>
@@ -400,6 +399,39 @@
     </div>
 </div>
 
+<style>
+/* 업무 유형/상태 열 스타일 */
+.task-type-status-cell {
+    min-width: 120px;
+}
+
+.task-type-status-cell strong {
+    font-size: 0.9rem;
+    color: #495057;
+}
+
+.task-type-status-cell .badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+/* 반응형 테이블 스타일 */
+@media (max-width: 768px) {
+    .task-type-status-cell {
+        min-width: 100px;
+    }
+    
+    .task-type-status-cell strong {
+        font-size: 0.8rem;
+    }
+    
+    .task-type-status-cell .badge {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.4rem;
+    }
+}
+</style>
+
 <script>
 let allTasks = [];
 let filteredTasks = [];
@@ -493,15 +525,18 @@ function renderTasks() {
     tbody.innerHTML = '';
     
     filteredTasks.forEach(task => {
+        const statusBadge = task.status === '완료' ? 'bg-success' : 'bg-warning';
         const row = `
             <tr>
                 <td class="text-center">${task.users?.departments?.name || '미지정'}</td>
                 <td class="text-center">${task.users?.username || 'Unknown'}</td>
-                <td class="text-center">${task.task_type}</td>
-                <td class="text-center">
-                    <span class="badge ${task.status === '완료' ? 'bg-success' : 'bg-warning'}">
-                        ${task.status}
-                    </span>
+                <td class="text-center task-type-status-cell">
+                    <div class="d-flex flex-column align-items-center">
+                        <strong class="mb-1">${task.task_type}</strong>
+                        <span class="badge ${statusBadge}">
+                            ${task.status}
+                        </span>
+                    </div>
                 </td>
                 <td class="text-center">${task.start_time}</td>
                 <td class="text-center">${task.end_time || '-'}</td>
