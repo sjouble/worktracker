@@ -78,7 +78,6 @@
                                 <th>진행상태</th>
                                 <th>업무내용</th>
                                 <th>시작시간</th>
-                                <th>종료시간</th>
                                 <th>수정</th>
                                 <th>완료</th>
                             </tr>
@@ -536,7 +535,7 @@ async function loadTasks() {
         const currentTasks = tasks.filter(task => task.status === '진행중');
         const currentTasksTableBody = document.getElementById('currentTasksTableBody');
         if (currentTasks.length === 0) {
-            currentTasksTableBody.innerHTML = '<tr><td colspan="7">현재 진행 중인 업무가 없습니다.</td></tr>';
+            currentTasksTableBody.innerHTML = '<tr><td colspan="6">현재 진행 중인 업무가 없습니다.</td></tr>';
         } else {
             let currentTasksHTML = '';
             currentTasks.forEach(task => {
@@ -546,7 +545,6 @@ async function loadTasks() {
                     <td><span class="badge status-badge progress">진행중</span></td>
                     <td>${task.description || '내용 없음'}</td>
                     <td>${task.start_time}</td>
-                    <td>${task.end_time || '-'}</td>
                     <td><button class="btn btn-outline-primary btn-sm" onclick="editTask(${task.id})">수정</button></td>
                     <td><button class="btn btn-success btn-sm" onclick="showCompleteForm(${task.id})">완료</button></td>
                   </tr>
