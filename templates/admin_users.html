@@ -96,8 +96,17 @@ let currentUserName = null;
 // 에러 메시지 정리 함수
 function cleanErrorMessage(error) {
     if (typeof error === 'string') {
-        // URL 패턴 제거
-        return error.replace(/https?:\/\/[^\s]+/g, '').replace(/\/[^\s]+/g, '').trim();
+        // URL 패턴 제거 (더 강력하게)
+        let cleaned = error
+            .replace(/https?:\/\/[^\s]+/g, '') // http/https URL 제거
+            .replace(/\/[^\s]+/g, '') // 슬래시로 시작하는 경로 제거
+            .replace(/[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '') // 도메인 패턴 제거
+            .replace(/localhost:\d+/g, '') // localhost 포트 제거
+            .replace(/\s+/g, ' ') // 연속된 공백을 하나로
+            .trim();
+        
+        // 빈 문자열이 되면 기본 메시지 반환
+        return cleaned || '오류가 발생했습니다.';
     }
     if (error && error.error) {
         return cleanErrorMessage(error.error);
