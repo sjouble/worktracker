@@ -1128,6 +1128,10 @@ def get_admin_tasks():
         return jsonify({'error': '데이터베이스 연결에 문제가 있습니다.'}), 500
     
     try:
+        # 오늘 날짜 (한국 시간 기준)
+        today = get_korean_date().isoformat()
+        logger.info(f"관리자 업무 목록 조회 - 오늘 날짜: {today}")
+        
         # 필터 파라미터 처리
         department = request.args.get('department')
         task_type = request.args.get('task_type')
@@ -1136,8 +1140,8 @@ def get_admin_tasks():
         end_date = request.args.get('end_date')
         time_range = request.args.get('time_range')
         
-        # 기본 쿼리 (모든 업무)
-        query = supabase.table('work_logs').select('*, users(username, departments(name))')
+        # 기본 쿼리 (오늘 업무만)
+        query = supabase.table('work_logs').select('*, users(username, departments(name))').eq('work_date', today)
         
         # 필터 적용
         if department:
@@ -1146,12 +1150,32 @@ def get_admin_tasks():
             query = query.eq('task_type', task_type)
         if status:
             query = query.eq('status', status)
+        
+        # 기간 필터가 있는 경우 오늘 기준 제한 해제
         if start_date and end_date:
-            query = query.gte('work_date', start_date).lte('work_date', end_date)
+            query = supabase.table('work_logs').select('*, users(username, departments(name))').gte('work_date', start_date).lte('work_date', end_date)
+            if department:
+                query = query.eq('users.departments.name', department)
+            if task_type:
+                query = query.eq('task_type', task_type)
+            if status:
+                query = query.eq('status', status)
         elif start_date:
-            query = query.gte('work_date', start_date)
+            query = supabase.table('work_logs').select('*, users(username, departments(name))').gte('work_date', start_date)
+            if department:
+                query = query.eq('users.departments.name', department)
+            if task_type:
+                query = query.eq('task_type', task_type)
+            if status:
+                query = query.eq('status', status)
         elif end_date:
-            query = query.lte('work_date', end_date)
+            query = supabase.table('work_logs').select('*, users(username, departments(name))').lte('work_date', end_date)
+            if department:
+                query = query.eq('users.departments.name', department)
+            if task_type:
+                query = query.eq('task_type', task_type)
+            if status:
+                query = query.eq('status', status)
         
         # 정렬 (최신순)
         query = query.order('created_at', desc=True)
