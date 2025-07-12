@@ -362,6 +362,9 @@ function cleanErrorMessage(error) {
             .replace(/\/[^\s]+/g, '') // 슬래시로 시작하는 경로 제거
             .replace(/[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '') // 도메인 패턴 제거
             .replace(/localhost:\d+/g, '') // localhost 포트 제거
+            .replace(/[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}:\d+/g, '') // 도메인:포트 패턴 제거
+            .replace(/\/api\/[^\s]*/g, '') // API 경로 제거
+            .replace(/\/[a-zA-Z0-9_-]+/g, '') // 일반 경로 제거
             .replace(/\s+/g, ' ') // 연속된 공백을 하나로
             .trim();
         
