@@ -355,9 +355,6 @@
                         <button type="submit" class="btn btn-success" id="processBtn">
                             <i class="fas fa-cog me-2"></i>정렬 처리 시작
                         </button>
-                        <button type="button" class="btn btn-outline-info" onclick="testMeechul()">
-                            <i class="fas fa-vial me-2"></i>테스트 파일 생성
-                        </button>
                     </div>
                 </form>
                 
@@ -828,22 +825,7 @@ async function handleMeechulSubmit(e) {
     }
 }
 
-// 미출대응 테스트 함수
-async function testMeechul() {
-    try {
-        const response = await fetch('/api/meechul-test');
-        const result = await response.json();
-        
-        if (response.ok && result.success) {
-            alert(`테스트 파일이 생성되었습니다.\n파일명: ${result.test_file}\n경로: ${result.test_path}`);
-        } else {
-            alert(cleanErrorMessage(result.error || '테스트 파일 생성에 실패했습니다.'));
-        }
-    } catch (error) {
-        console.error('테스트 오류:', error);
-        alert(cleanErrorMessage(error));
-    }
-}
+
 
 // 미출대응 모달 초기화
 document.getElementById('meechulModal').addEventListener('hidden.bs.modal', function() {
