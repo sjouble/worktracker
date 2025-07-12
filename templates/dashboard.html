@@ -292,6 +292,38 @@
     </div>
 </div>
 
+<style>
+.work-row {
+  display: flex;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+  background: #f8f9fa;
+  border-radius: 0.5rem;
+  padding: 1rem 0.5rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+}
+.work-cell {
+  flex: 0 0 25%;
+  max-width: 25%;
+  padding: 0.5rem 0.5rem;
+  text-align: center;
+  font-size: 1rem;
+  word-break: keep-all;
+}
+.work-label {
+  color: #888;
+  font-size: 0.95em;
+  margin-bottom: 0.25em;
+  display: block;
+}
+.work-btns {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+</style>
+
 <script>
 // 한국 시간대 함수
 function getKoreanTime() {
@@ -503,45 +535,42 @@ async function loadTasks() {
         // 현재 진행 중인 업무
         const currentTasks = tasks.filter(task => task.status === '진행중');
         const currentTasksTableBody = document.getElementById('currentTasksTableBody');
-        
         if (currentTasks.length === 0) {
             currentTasksTableBody.innerHTML = '<tr><td colspan="7">현재 진행 중인 업무가 없습니다.</td></tr>';
         } else {
             let currentTasksHTML = '';
             currentTasks.forEach(task => {
                 currentTasksHTML += `
-                    <tr>
-                        <td>${task.task_type}</td>
-                        <td><span class="badge status-badge progress">진행중</span></td>
-                        <td>${task.description || '내용 없음'}</td>
-                        <td>${task.start_time}</td>
-                        <td>${task.end_time || '-'}</td>
-                        <td><button class="btn btn-outline-primary btn-sm" onclick="editTask(${task.id})">수정</button></td>
-                        <td><button class="btn btn-success btn-sm" onclick="showCompleteForm(${task.id})">완료</button></td>
-                    </tr>
+                  <tr>
+                    <td>${task.task_type}</td>
+                    <td><span class="badge status-badge progress">진행중</span></td>
+                    <td>${task.description || '내용 없음'}</td>
+                    <td>${task.start_time}</td>
+                    <td>${task.end_time || '-'}</td>
+                    <td><button class="btn btn-outline-primary btn-sm" onclick="editTask(${task.id})">수정</button></td>
+                    <td><button class="btn btn-success btn-sm" onclick="showCompleteForm(${task.id})">완료</button></td>
+                  </tr>
                 `;
             });
             currentTasksTableBody.innerHTML = currentTasksHTML;
         }
-        
         // 완료된 업무
         const completedTasks = tasks.filter(task => task.status === '완료');
         const completedTasksTableBody = document.getElementById('completedTasksTableBody');
-        
         if (completedTasks.length === 0) {
             completedTasksTableBody.innerHTML = '<tr><td colspan="6">완료된 업무가 없습니다.</td></tr>';
         } else {
             let completedTasksHTML = '';
             completedTasks.forEach(task => {
                 completedTasksHTML += `
-                    <tr>
-                        <td>${task.task_type}</td>
-                        <td><span class="badge bg-success">완료</span></td>
-                        <td>${task.description || '내용 없음'}</td>
-                        <td>${task.start_time}</td>
-                        <td>${task.end_time || '-'}</td>
-                        <td><button class="btn btn-outline-primary btn-sm" onclick="editCompletedTask(${task.id})">수정</button></td>
-                    </tr>
+                  <tr>
+                    <td>${task.task_type}</td>
+                    <td><span class="badge bg-success">완료</span></td>
+                    <td>${task.description || '내용 없음'}</td>
+                    <td>${task.start_time}</td>
+                    <td>${task.end_time || '-'}</td>
+                    <td><button class="btn btn-outline-primary btn-sm" onclick="editCompletedTask(${task.id})">수정</button></td>
+                  </tr>
                 `;
             });
             completedTasksTableBody.innerHTML = completedTasksHTML;
