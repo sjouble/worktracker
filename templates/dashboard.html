@@ -696,7 +696,7 @@ async function loadTasks() {
         }
         
         // 제목 업데이트
-        document.getElementById('completedTasksTitle').textContent = titleText;
+        document.getElementById('completedTasksTitle').textContent = titleText.replace('완료된 업무 목록', '');
         
         const response = await fetch(url);
         const tasks = await response.json();
