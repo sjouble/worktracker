@@ -346,7 +346,7 @@
   padding: 0.5rem 1rem;
   border-radius: 20px;
   display: inline-block;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0;
 }
 
 .task-type-badge.인출 { background: #e3f2fd; color: #1976d2; }
@@ -364,6 +364,7 @@
   padding: 0.25rem 0.75rem;
   border-radius: 12px;
   font-weight: 500;
+  margin-left: 0.5rem;
 }
 
 .task-status-badge.progress {
@@ -453,6 +454,11 @@
   .task-type-badge {
     font-size: 0.8rem;
     padding: 0.4rem 0.8rem;
+    margin-bottom: 0;
+  }
+  
+  .task-status-badge {
+    margin-left: 0.3rem;
   }
   
   .task-actions {
@@ -481,6 +487,13 @@
   .task-type-badge {
     font-size: 0.75rem;
     padding: 0.3rem 0.6rem;
+    margin-bottom: 0;
+  }
+  
+  .task-status-badge {
+    margin-left: 0.2rem;
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
   }
   
   .task-description {
@@ -720,11 +733,10 @@ async function loadTasks() {
                     <div class="task-card current">
                         <div class="task-card-header">
                             <div class="d-flex justify-content-between align-items-start">
-                                <div>
+                                <div class="d-flex align-items-center gap-2">
                                     <span class="task-type-badge ${task.task_type}">${task.task_type}</span>
                                     <span class="task-status-badge progress">진행중</span>
                                 </div>
-                                <small class="text-muted">${task.work_date}</small>
                             </div>
                         </div>
                         <div class="task-card-body">
