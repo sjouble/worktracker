@@ -66,26 +66,15 @@
         
         <!-- 현재 진행 중인 업무 -->
         <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">현재 진행 중인 업무</h5>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-clock text-warning me-2"></i>현재 진행 중인 업무
+                </h5>
+                <span class="badge bg-warning text-dark" id="currentTasksCount">0</span>
             </div>
-            <div class="card-body">
-                <div id="currentTasks">
-                    <table class="table table-bordered align-middle text-center mb-0">
-                        <thead>
-                            <tr>
-                                <th>업무유형</th>
-                                <th>진행상태</th>
-                                <th>업무내용</th>
-                                <th>시작시간</th>
-                                <th>수정</th>
-                                <th>완료</th>
-                            </tr>
-                        </thead>
-                        <tbody id="currentTasksTableBody">
-                            <!-- JS로 동적 생성 -->
-                        </tbody>
-                    </table>
+            <div class="card-body p-0">
+                <div id="currentTasks" class="task-cards-container">
+                    <!-- JS로 동적 생성 -->
                 </div>
             </div>
         </div>
@@ -165,26 +154,15 @@
         
         <!-- 완료된 업무 목록 -->
         <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0" id="completedTasksTitle">완료된 업무 목록</h5>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-check-circle text-success me-2"></i><span id="completedTasksTitle">완료된 업무 목록</span>
+                </h5>
+                <span class="badge bg-success" id="completedTasksCount">0</span>
             </div>
-            <div class="card-body">
-                <div id="completedTasksContainer">
-                    <table class="table table-bordered align-middle text-center mb-0">
-                        <thead>
-                            <tr>
-                                <th>업무유형</th>
-                                <th>진행상태</th>
-                                <th>업무내용</th>
-                                <th>시작시간</th>
-                                <th>종료시간</th>
-                                <th>수정</th>
-                            </tr>
-                        </thead>
-                        <tbody id="completedTasksTableBody">
-                            <!-- JS로 동적 생성 -->
-                        </tbody>
-                    </table>
+            <div class="card-body p-0">
+                <div id="completedTasksContainer" class="task-cards-container">
+                    <!-- JS로 동적 생성 -->
                 </div>
             </div>
         </div>
@@ -320,6 +298,195 @@
   gap: 0.5rem;
   justify-content: center;
   margin-top: 0.5rem;
+}
+
+/* 업무 카드 컨테이너 */
+.task-cards-container {
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+/* 업무 카드 스타일 */
+.task-card {
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.task-card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  transform: translateY(-2px);
+}
+
+.task-card.current {
+  border-left: 4px solid #ffc107;
+}
+
+.task-card.completed {
+  border-left: 4px solid #198754;
+}
+
+.task-card-header {
+  padding: 1rem;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-bottom: 1px solid #e9ecef;
+}
+
+.task-card-body {
+  padding: 1rem;
+}
+
+.task-type-badge {
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  display: inline-block;
+  margin-bottom: 0.5rem;
+}
+
+.task-type-badge.인출 { background: #e3f2fd; color: #1976d2; }
+.task-type-badge.보충 { background: #f3e5f5; color: #7b1fa2; }
+.task-type-badge.입고지원 { background: #e8f5e8; color: #388e3c; }
+.task-type-badge.미출대응 { background: #fff3e0; color: #f57c00; }
+.task-type-badge.단내리기 { background: #fce4ec; color: #c2185b; }
+.task-type-badge.이고 { background: #e0f2f1; color: #00695c; }
+.task-type-badge.과출 { background: #f1f8e9; color: #689f38; }
+.task-type-badge.파손 { background: #ffebee; color: #d32f2f; }
+.task-type-badge.기타 { background: #fafafa; color: #616161; }
+
+.task-status-badge {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.task-status-badge.progress {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.task-status-badge.completed {
+  background: #d1e7dd;
+  color: #0f5132;
+}
+
+.task-info {
+  margin: 0.75rem 0;
+}
+
+.task-info-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  color: #6c757d;
+}
+
+.task-info-item i {
+  width: 16px;
+  margin-right: 0.5rem;
+  color: #adb5bd;
+}
+
+.task-description {
+  background: #f8f9fa;
+  padding: 0.75rem;
+  border-radius: 8px;
+  margin: 0.75rem 0;
+  border-left: 3px solid #dee2e6;
+}
+
+.task-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.task-actions .btn {
+  flex: 1;
+  min-width: 80px;
+  font-size: 0.875rem;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #6c757d;
+}
+
+.empty-state i {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 1rem;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .task-card {
+    margin-bottom: 0.75rem;
+    border-radius: 8px;
+  }
+  
+  .task-card-header {
+    padding: 0.75rem;
+  }
+  
+  .task-card-body {
+    padding: 0.75rem;
+  }
+  
+  .task-type-badge {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.8rem;
+  }
+  
+  .task-actions {
+    flex-direction: column;
+  }
+  
+  .task-actions .btn {
+    width: 100%;
+    margin-bottom: 0.25rem;
+  }
+  
+  .task-info-item {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .task-card-header {
+    padding: 0.5rem;
+  }
+  
+  .task-card-body {
+    padding: 0.5rem;
+  }
+  
+  .task-type-badge {
+    font-size: 0.75rem;
+    padding: 0.3rem 0.6rem;
+  }
+  
+  .task-description {
+    padding: 0.5rem;
+    font-size: 0.875rem;
+  }
 }
 </style>
 
@@ -536,45 +703,107 @@ async function loadTasks() {
         
         // 현재 진행 중인 업무
         const currentTasks = tasks.filter(task => task.status === '진행중');
-        const currentTasksTableBody = document.getElementById('currentTasksTableBody');
+        const currentTasksContainer = document.getElementById('currentTasks');
+        document.getElementById('currentTasksCount').textContent = currentTasks.length;
+        
         if (currentTasks.length === 0) {
-            currentTasksTableBody.innerHTML = '<tr><td colspan="6">현재 진행 중인 업무가 없습니다.</td></tr>';
+            currentTasksContainer.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-clock"></i>
+                    <p>현재 진행 중인 업무가 없습니다.</p>
+                </div>
+            `;
         } else {
             let currentTasksHTML = '';
             currentTasks.forEach(task => {
                 currentTasksHTML += `
-                  <tr>
-                    <td>${task.task_type}</td>
-                    <td><span class="badge status-badge progress">진행중</span></td>
-                    <td>${task.description || '내용 없음'}</td>
-                    <td>${task.start_time}</td>
-                    <td><button class="btn btn-outline-primary btn-sm" onclick="editTask(${task.id})">수정</button></td>
-                    <td><button class="btn btn-success btn-sm" onclick="showCompleteForm(${task.id})">완료</button></td>
-                  </tr>
+                    <div class="task-card current">
+                        <div class="task-card-header">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <span class="task-type-badge ${task.task_type}">${task.task_type}</span>
+                                    <span class="task-status-badge progress">진행중</span>
+                                </div>
+                                <small class="text-muted">${task.work_date}</small>
+                            </div>
+                        </div>
+                        <div class="task-card-body">
+                            ${task.description ? `<div class="task-description">${task.description}</div>` : ''}
+                            <div class="task-info">
+                                <div class="task-info-item">
+                                    <i class="fas fa-play"></i>
+                                    <span>시작: ${task.start_time}</span>
+                                </div>
+                            </div>
+                            <div class="task-actions">
+                                <button class="btn btn-outline-primary" onclick="editTask(${task.id})">
+                                    <i class="fas fa-edit me-1"></i>수정
+                                </button>
+                                <button class="btn btn-success" onclick="showCompleteForm(${task.id})">
+                                    <i class="fas fa-check me-1"></i>완료
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 `;
             });
-            currentTasksTableBody.innerHTML = currentTasksHTML;
+            currentTasksContainer.innerHTML = currentTasksHTML;
         }
+        
         // 완료된 업무
         const completedTasks = tasks.filter(task => task.status === '완료');
-        const completedTasksTableBody = document.getElementById('completedTasksTableBody');
+        const completedTasksContainer = document.getElementById('completedTasksContainer');
+        document.getElementById('completedTasksCount').textContent = completedTasks.length;
+        
         if (completedTasks.length === 0) {
-            completedTasksTableBody.innerHTML = '<tr><td colspan="6">완료된 업무가 없습니다.</td></tr>';
+            completedTasksContainer.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-check-circle"></i>
+                    <p>완료된 업무가 없습니다.</p>
+                </div>
+            `;
         } else {
             let completedTasksHTML = '';
             completedTasks.forEach(task => {
+                const duration = calculateDuration(task.start_time, task.end_time);
                 completedTasksHTML += `
-                  <tr>
-                    <td>${task.task_type}</td>
-                    <td><span class="badge bg-success">완료</span></td>
-                    <td>${task.description || '내용 없음'}</td>
-                    <td>${task.start_time}</td>
-                    <td>${task.end_time || '-'}</td>
-                    <td><button class="btn btn-outline-primary btn-sm" onclick="editCompletedTask(${task.id})">수정</button></td>
-                  </tr>
+                    <div class="task-card completed">
+                        <div class="task-card-header">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <span class="task-type-badge ${task.task_type}">${task.task_type}</span>
+                                    <span class="task-status-badge completed">완료</span>
+                                </div>
+                                <small class="text-muted">${task.work_date}</small>
+                            </div>
+                        </div>
+                        <div class="task-card-body">
+                            ${task.description ? `<div class="task-description">${task.description}</div>` : ''}
+                            ${task.complete_description ? `<div class="task-description" style="background: #e8f5e8; border-left-color: #198754;">완료 내용: ${task.complete_description}</div>` : ''}
+                            <div class="task-info">
+                                <div class="task-info-item">
+                                    <i class="fas fa-play"></i>
+                                    <span>시작: ${task.start_time}</span>
+                                </div>
+                                <div class="task-info-item">
+                                    <i class="fas fa-stop"></i>
+                                    <span>종료: ${task.end_time || 'N/A'}</span>
+                                </div>
+                                ${duration ? `<div class="task-info-item">
+                                    <i class="fas fa-clock"></i>
+                                    <span>소요시간: ${duration}</span>
+                                </div>` : ''}
+                            </div>
+                            <div class="task-actions">
+                                <button class="btn btn-outline-primary" onclick="editCompletedTask(${task.id})">
+                                    <i class="fas fa-edit me-1"></i>수정
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 `;
             });
-            completedTasksTableBody.innerHTML = completedTasksHTML;
+            completedTasksContainer.innerHTML = completedTasksHTML;
         }
     } catch (error) {
         console.error('업무 목록 불러오기 실패:', error);
